@@ -1,19 +1,19 @@
 module.exports = {
+  sendTo: "rizapheonyxx",
   preAdminRoles: ["kraken", "hydra heads", "spawn", "imps"],
   adminRoles: ["kraken", "hydra heads"],
   adminUsers: ["parkermc"],
-  botChannel: "298544719946842114",// test on my server
-  //botchannel: "299032114677022722",// bad wolf bat
+  //botChannel: "298544719946842114",// test on my server
+  botChannel: "299032114677022722",// bad wolf bay
   help: {
     main:`\`\`\`
 An bot for RR use.
-No spaces in user name when useing admin commands!
 
 RR:
-  accept    Accept the RR. (DM Only) /* Not Implemented */
+  accept    Accept the RR. (DM Only)
   add       Adds you to the RR list
-  deny      "Deny the RR and move to the end of the line.  (DM Only) /* Not Implemented */
-  done      Add to the RR. (DM Only) /* Not Implemented */
+  deny      Deny the RR and move to the end of the line.  (DM Only)
+  done      Add your writing to the RR. (DM Only)
   remove    Removes you to the RR list
 RR Admin:
   addA      Add user to list.
@@ -22,7 +22,7 @@ RR Admin:
   removeA   Removes a user from the list.
   note      See the note.
   setNote   Set the note.
-  start     Start the RR. /* Not Implemented */
+  start     Start the RR.
   timezones List users and their timezones.
 Quotes:
   addquote  Add a quote (Spawn and up)
@@ -33,14 +33,27 @@ Quotes:
 
 Type ?help command for more info on a command.
 You can also type ?help category for more info on a category.\`\`\``,
-    rr: `\`\`\`
+  rr: `\`\`\`
 The Round Robin is where we get a list of names of people who want to join the robin. Depending on the amount of people we usually have each person write 3 sentences in 15 minutes then pass it on to the bot. Rizapheonyxx usually goes through it for grammar errors.\`\`\``,
-    add: `\`\`\`
+  accept: `\`\`\`
+Accept the RR. (DM Only)
+?accept\`\`\``,
+  add: `\`\`\`
 Adds you to the RR list.
 ?add <timezone> <time restrictions>\`\`\``,
     remove: `\`\`\`
 Removes you to the RR list.
 ?remove\`\`\``,
+  deny: `\`\`\`
+Deny the RR and move to the end of the line.  (DM Only)
+?deny\`\`\``,
+  done: `\`\`\`
+Add your writing to the RR. (DM Only)
+?done
+or
+<your writeing> ?done
+or
+?done <you writing>\`\`\``,
     rradmin: `\`\`\`
 Admin commands for the RR's only Hydras and higer can use them.\`\`\``,
     adda: `\`\`\`
@@ -61,6 +74,9 @@ See the note.
     setnote: `\`\`\`
 Set the note.
 ?setNote <note>\`\`\``,
+    start: `\`\`\`
+Start the RR.
+?start\`\`\``,
     timezones: `\`\`\`
 List users and their timezones.
 ?timezones\`\`\``,
