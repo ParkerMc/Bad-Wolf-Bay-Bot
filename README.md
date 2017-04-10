@@ -1,3 +1,4 @@
 # RRbot
 A discord bot for our RR
-To use it you must have [discord.py](https://github.com/Rapptz/discord.py) (with voice) and [PyDrive](https://github.com/googledrive/PyDrive).
+To use it you must have discord.js and a few other libs.
+To install them all use `npm install discord.js node-opus googleapis google-auth-library --save`
