@@ -96,7 +96,7 @@ bot.on('message', message => {
     }
   }else if(message.content.toLowerCase().match(/^\?add /)){
     if (message.content.substring(5).split(" ").length < 2){
-      message.channel.send("Not enough arguments command format is \"?add <timezone> <time restrictions>\".");
+      message.channel.send("Not enough arguments command format is `?add <timezone> <time restrictions>`.");
     }else{
       if (started){
         message.channel.send("The RR has already started only admins can add people.");
@@ -123,16 +123,46 @@ bot.on('message', message => {
         }
       }
     }
+  }else if(message.content.toLowerCase().match(/^\?adda /)){
+    if(!isAdmin(message)){
+      message.channel.send("You are not authorized to run this command.")
+    }else{
+      if (message.content.substring(6).split(" ").length < 3){
+        message.channel.send("Not enough arguments command format is `?addA <username> <timezone> <time restrictions>`.")
+      }else{
+        var username = message.content.substring(6).split(" ")[0];
+        var user = message.channel.members.find(i => i.user.username.toLowerCase() == username.toLowerCase());
+        var i = 0;
+        while (user === null) {
+          i++;
+          if (message.content.substring(6).split(" ").length < i){
+            console.log(i);
+            message.channel.send("User not found");
+            return;
+          }
+          username += " " + message.content.substring(6).split(" ")[i];
+          user = message.channel.members.find(i => i.user.username.toLowerCase() == username.toLowerCase());
+        }
+        if (message.content.substring(6).replace(username+" ", "").split(" ").length < 2){
+          message.channel.send("Not enough arguments command format is `?addA <username> <timezone> <time restrictions>`.")
+        }else{
+          user = user.user;
+          userList.push([user, message.content.substring(6).replace(username+" ", "")]);
+          updateList();
+          message.channel.send("Added.");
+       }
+      }
+    }
   }else if(message.content.toLowerCase().match(/^\?move /)){
     if(!isAdmin(message)){
       message.channel.send("You are not authorized to run this command.")
     }else{
       var arr = message.content.toLowerCase().replace("?move ", "").split(" ");
       if (arr.length < 2){
-        message.channel.send("Not enough arguments command format is \"?move <username> <index #>\".")
+        message.channel.send("Not enough arguments command format is `?move <username> <index #>`.")
       }else{
         if (!isNaN(arr[arr.length-1])){
-          message.channel.send("Error: \"" + arr[arr.length-1] + "\" is not a number.")
+          message.channel.send("Error: `" + arr[arr.length-1] + "` is not a number.")
         }else{
           if (parseInt(arr[arr.length-1]) > userList.length){
             message.channel.send("Error: number out of range.");
@@ -159,7 +189,7 @@ bot.on('message', message => {
     }else{
       var username = message.content.toLowerCase().replace("?removea ", "");
       if (username == ""){
-        message.channel.send("Not enough arguments command format is \"?removeA <username>\".")
+        message.channel.send("Not enough arguments command format is `?removeA <username>`.")
       }else{
         for (var i = 0; i < userList.length; i++) {
           if (userList[i][0].username.toLowerCase() == username){
@@ -200,7 +230,7 @@ bot.on('message', message => {
       message.channel.send("You are not authorized to run this command.")
     }else{
       if (message.content.substring(9).replace(" ", "") == ""){
-        message.channel.send("Not enough arguments command format is \"?setNote <note>\".");
+        message.channel.send("Not enough arguments command format is `?setNote <note>`.");
       }else{
         note = message.content.substring(9);
         file.save("note", note)
@@ -218,7 +248,7 @@ bot.on('message', message => {
         }else if (userList[userList.length-1][0].id == i[0].id){
           msg += ", and \n" + i[0].username + " - " + i[1];
         }else{
-          msg += ",\n " + i[0].username + " - " + i[1];
+          msg += ",\n" + i[0].username + " - " + i[1];
         }
       });
       if (userList.length == 0) msg = "List is empty.";
@@ -229,6 +259,7 @@ bot.on('message', message => {
       message.channel.send("You are not authorized to run this command.")
     }else{
       if(message.content.substring(10) == ""){
+        message.channel.send("Not enough arguments command format is `?addquote <quote>`.");
       }else{
         quotes.push(message.content.substring(10));
         message.channel.send("Quote #" + (quotes.indexOf(message.content.substring(10)) + 1) + " added.")
