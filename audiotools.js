@@ -1,5 +1,6 @@
 'use strict';
 
+const lame = require('lame');
 const fs = require('fs');
 const path = require('path');
 const opus = require('node-opus');
@@ -279,4 +280,6 @@ let podcastTimestamp = extractTimestamp(podcastName);
 let users = {};
 let temporaryFiles = {};
 
-assembleUsers(inputDirectory);
+setTimeout(assembleUsers, 10, inputDirectory);
+
+setTimeout(assembleUsers, 10, inputDirectory);
