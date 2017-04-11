@@ -1,11 +1,13 @@
 var file = require('./file.js');
 var settings = require('./settings.js');
-var audiotools = require('./audiotools.js');
+//var audiotools = require('./audiotools.js');
 const Discord = require('discord.js');
 var fs = require('fs');
+process.on('unhandledRejection', r => console.log(r));
+
 
 const bot = new Discord.Client();
-var version = "Testing"
+var version = "V1.1"
 var note = "";
 var userList = [];
 var RR = [];
@@ -72,7 +74,7 @@ function randomInt (low, high) {
 function isAdmin(message){
   var allRoles = message.channel.guild.roles;
   var roles = [];
-  allRoles.forEach(function(i){if (settings.adminRoles.indexOf(i.name) > -1) roles.push(i);});
+  allRoles.forEach(function(i){if (settings.adminRoles.indexOf(i.name.toLowerCase()) > -1) roles.push(i);});
   for (var i = 0; i < roles.length; i++) {
     if(roles[i].members.get(message.author.id) !== undefined) return true;
   }
@@ -83,7 +85,7 @@ function isAdmin(message){
 function isPreAdmin(message){
   var allRoles = message.channel.guild.roles;
   var roles = [];
-  allRoles.forEach(function(i){if (settings.preAdminRoles.indexOf(i.name) > -1) roles.push(i);});
+  allRoles.forEach(function(i){if (settings.preAdminRoles.indexOf(i.name.toLowerCase()) > -1) roles.push(i);});
   for (var i = 0; i < roles.length; i++) {
     if(roles[i].members.get(message.author.id) !== undefined) return true;
   }
@@ -127,7 +129,7 @@ function updateList(){
   file.save2Array("userList", userList);
 
 }
-bot.on('ready', () => {
+bot.on('ready', async function(){
   console.log('Connected!');
   //bot.user.setGame("Testing");
   bot.user.setGame(version + " By: @ParkerMc");
@@ -135,7 +137,7 @@ bot.on('ready', () => {
   userList = file.load2Array("userList");
   if (userList.length==0) userList=[];
   for (var i = 0; i < userList.length; i++) {
-    userList[i][0] = botChannel.members.get(userList[i][0].replace("<@", "").replace(">","")).user;
+    userList[i][0] = await bot.fetchUser(userList[i][0].replace("<@", "").replace(">",""));//.then(function(user){return user;} );
   }
 });
 
@@ -199,16 +201,12 @@ bot.on('message', message => {
       if (message.content.substring(5).split(" ").length < 2){
         message.channel.send("Not enough arguments command format is `?add <timezone> <time restrictions>`.");
       }else{
-        if (started){
-          message.channel.send("The RR has already started only admins can add people.");
+        if (userInList(message.author)){
+          message.channel.send("You are already in the list.");
         }else{
-          if (userInList(message.author)){
-            message.channel.send("You are already in the list.");
-          }else{
-            userList.push([message.author, message.content.substring(5)]);
-            updateList();
-            message.channel.send("Added.");
-          }
+          userList.push([message.author, message.content.substring(5)]);
+          updateList();
+          message.channel.send("Added.");
         }
       }
     }else if(message.content.toLowerCase().match(/^\?remove$/)){
@@ -237,7 +235,6 @@ bot.on('message', message => {
           while (user === null) {
             i++;
             if (message.content.substring(6).split(" ").length < i){
-              console.log(i);
               message.channel.send("User not found");
               return;
             }
@@ -390,7 +387,7 @@ bot.on('message', message => {
         userList[0][0].dmChannel.send(ifThereMsg);
         currentUser = userList[0][0];
         userRR = "";
-        RR = [];
+        //RR = [];
         accepted = false;
         timeout(currentUser);
       }
@@ -420,7 +417,7 @@ bot.on('message', message => {
           					if (hexString === 'f8fffe') {
           						return;
           					}
-          					let outputPath = recordingPath + `${user.name}-${Date.now()}.opus_string`;
+          					let outputPath = recordingPath + `${user.username}-${Date.now()}.opus_string`;
           					writeStream = fs.createWriteStream(outputPath);
           					_writeStreams.set(user.id, writeStream);
           				}
@@ -454,4 +451,4 @@ quotes = file.loadArray("quotes");
 if (RR.length == 0) RR = [];
 if (quotes.length == 0) quotes = [];
 if (note.replace(" ", "") == "") note = "Please write 3 sentences in 15 minutes that build on things people have written before you.";
-bot.login("token");
+bot.login("");
