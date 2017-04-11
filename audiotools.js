@@ -1,5 +1,6 @@
 'use strict';
 
+var events = require('events');
 const lame = require('lame');
 const fs = require('fs');
 const path = require('path');
@@ -14,6 +15,8 @@ let total = 0;
 let complete = 0;
 
 const frequency = 48000;
+
+var step2Emitter = new events.EventEmitter();
 
 let convertOpusStringToRawPCM = (inputPath, filename) => {
 	total++;
@@ -266,20 +269,21 @@ let assembleUsers = (inputDirectory) => {
 			}
 		}
 	});
+	step2Emitter.emit("done")
 };
 
 let toMp3 = (inputDirectory) => {
 	fs.readdir(inputDirectory, (err, files) => {
 		files.forEach((file) => {
 			let ext = path.extname(file);
-			if (ext === '') {
-				fs.createReadStream( || path.resolve(__dirname, path.join(inputDirectory, file)))
-				.pipe(new lame.Encoder({ channels: 2, bitDepth: 16, sampleRate: 44100 }))
-				.pipe(fs.createWriteStream(path.resolve(__dirname, path.join(inputDirectory, file+'.mp3'))))
-				.on('close', function () {
-					console.error('done: ' + file);
-			}
-		});
+				if (ext === '') {
+					fs.createReadStream( process.argv[2] || path.resolve(__dirname, path.join(inputDirectory, file)))
+					.pipe(new lame.Encoder({ channels: 2, bitDepth: 16, sampleRate: 44100 }))
+					.pipe(fs.createWriteStream(path.resolve(__dirname, path.join(inputDirectory, file+'.mp3'))))
+					.on('close', function () {
+						console.error('done: ' + file);
+			});
+		}
 	});
   });
 };
@@ -298,4 +302,4 @@ let temporaryFiles = {};
 
 setTimeout(assembleUsers, 10, inputDirectory);
 
-setTimeout(toMp3, 10, inputDirectory);
+step2Emitter.on("done", toMp3, inputDirectory);
