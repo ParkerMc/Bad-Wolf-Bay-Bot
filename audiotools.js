@@ -183,7 +183,7 @@ let reassemble = (config) => {
 				}).catch(reject);
 			}).catch(reject);
 		} else {
-			command = `ffmpeg -y ${inputCommand} -filter_complex "${filterCommand}" -map "[a]" -acodec libmp3 ${outputPath}`;
+			command = `ffmpeg -y ${inputCommand} -filter_complex "${filterCommand}" -map "[a]" -acodec libmp3lame ${outputPath}`;
 			console.log(command);
 			doCommand(command).then(resolve).catch(reject);
 		}
@@ -298,3 +298,4 @@ let podcastTimestamp = extractTimestamp(podcastName);
 let users = {};
 let temporaryFiles = {};
 
+setTimeout(assembleUsers, 10, inputDirectory);
