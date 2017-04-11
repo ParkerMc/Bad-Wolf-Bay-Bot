@@ -267,6 +267,7 @@ let assembleUsers = (inputDirectory) => {
 			}
 		}
 	});
+	console.log("done");
 };
 
 let toMp3 = () => {
