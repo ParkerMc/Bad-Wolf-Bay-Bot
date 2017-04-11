@@ -268,6 +268,22 @@ let assembleUsers = (inputDirectory) => {
 	});
 };
 
+let toMp3 = (inputDirectory) => {
+	fs.readdir(inputDirectory, (err, files) => {
+		files.forEach((file) => {
+			let ext = path.extname(file);
+			if (ext === '') {
+				fs.createReadStream( || path.resolve(__dirname, path.join(inputDirectory, file)))
+				.pipe(new lame.Encoder({ channels: 2, bitDepth: 16, sampleRate: 44100 }))
+				.pipe(fs.createWriteStream(path.resolve(__dirname, path.join(inputDirectory, file+'.mp3'))))
+				.on('close', function () {
+					console.error('done: ' + file);
+			}
+		});
+	});
+  });
+};
+
 let inputDirectory = "recordings";
 convertAllOpusStringToRawPCM(inputDirectory);
 
@@ -282,4 +298,4 @@ let temporaryFiles = {};
 
 setTimeout(assembleUsers, 10, inputDirectory);
 
-setTimeout(assembleUsers, 10, inputDirectory);
+setTimeout(toMp3, 10, inputDirectory);
