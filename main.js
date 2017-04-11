@@ -1,9 +1,10 @@
 var file = require('./file.js');
 var settings = require('./settings.js');
 const Discord = require('discord.js');
+var fs = require('fs');
 
 const bot = new Discord.Client();
-var version = "v1.0"
+var version = "Testing"
 var note = "";
 var userList = [];
 var RR = [];
@@ -15,10 +16,22 @@ var accepted = false;
 var currentUser = null;
 var alreadyTimedout = [];
 var timeToResond = 5;
+var vc = false;
+var vcc = null;
 var timeToResondText = "5 mins" ;
 var ifThereMsg = "It is your turn for the RR please run \"?accept\" to accept, \"?deny\" to be moved to the end of the list, or \"?remove\" to be skiped and removed from the list. You will be skiped after " + timeToResondText + ".";
 var endMessage = "Send me your when you are done used \"?done\" to add your writeing or you can use \"?deny\" or \"?remove\"."
+var _voiceConnections = new Map();
+var _voiceReceivers = new Map();
+var _writeStreams = new Map();
+var recordingPath = "./recordings/";
 
+
+function generateOutputFile(channel, member) {
+  // use IDs instead of username cause some people have stupid emojis in their name
+  const fileName = `./recordings/${channel.id}-${member.id}-${Date.now()}.pcm`;
+  return fs.createWriteStream(fileName);
+}
 
 function next() {
   if (userList.length > 1){
@@ -386,8 +399,53 @@ bot.on('message', message => {
         accepted = false;
         timeout(currentUser);
       }
-    }else if(message.content.match(/^\?/)){
-      message.channel.send("Command " + message.content.split(" ")[0] + " does not exist.");
+    }else if (message.content.match(/^\?record/)) {
+      var channels = [];
+      bot.channels.forEach(function(i){ if (i.type == "voice") channels.push(i);});
+        for (var i = 0; i < channels.length; i++) {
+          if (channels[i].members.get(message.author.id) != undefined){
+            vcc = channels[i];
+            vc = true;
+            channels[i].join().then((voiceConnection) => {
+          			_voiceConnections.set(vcc.id, voiceConnection);
+          			let voiceReceiver = voiceConnection.createReceiver();
+          			voiceReceiver.on('opus', (user, data) => {
+          				let hexString = data.toString('hex');
+          				let writeStream = _writeStreams.get(user.id);
+          				if (!writeStream) {
+          					/* If there isn't an ongoing writeStream and a frame of silence is received then it must be the
+          					 *   left over trailing silence frames used to signal the end of the transmission.
+          					 * If we do not ignore this frame at this point we will create a new writeStream that is labelled
+          					 *   as starting at the current time, but there will actually be a time delay before it is further
+          					 *   populated by data once the user has begun speaking again.
+          					 * This delay would not be captured however since no data is sent for it, so the result would be
+          					 *   the audio fragments being out of time when reassembled.
+          					 * For this reason a packet of silence cannot be used to create a new writeStream.
+          					 */
+          					if (hexString === 'f8fffe') {
+          						return;
+          					}
+          					let outputPath = recordingPath + `${user.id}-${Date.now()}.opus_string`;
+          					writeStream = fs.createWriteStream(outputPath);
+          					_writeStreams.set(user.id, writeStream);
+          				}
+          				writeStream.write(`,${hexString}`);
+          			});
+          			_voiceReceivers.set(vcc.id, voiceReceiver);
+          		}).catch(console.error);
+            return;
+          }
+        }
+        message.channel.send("You are not in a voice channel.");
+    }else if(message.content.match(/^\?stop/)){
+      if (_voiceReceivers.get(vcc.id)&&vc) {
+        _voiceReceivers.get(vcc.id).destroy();
+        _voiceReceivers.delete(vcc.id);
+        _voiceConnections.get(vcc.id).disconnect();
+        _voiceConnections.delete(vcc.id);
+        vc = false;
+        message.channel.send("Converting.");
+}
     }
   }
 });
