@@ -16,8 +16,6 @@ let complete = 0;
 
 const frequency = 48000;
 
-var step2Emitter = new events.EventEmitter();
-
 let convertOpusStringToRawPCM = (inputPath, filename) => {
 	total++;
 	let encoder = new opus.OpusEncoder(rate, channels);
@@ -182,6 +180,7 @@ let reassemble = (config) => {
 			})).then(() => {
 				reassemble(subConfig).then((code) => {
 					resolve(code);
+					toMp3();
 				}).catch(reject);
 			}).catch(reject);
 		} else {
@@ -269,7 +268,6 @@ let assembleUsers = (inputDirectory) => {
 			}
 		}
 	});
-	step2Emitter.emit("done")
 };
 
 let toMp3 = () => {
@@ -302,5 +300,3 @@ let users = {};
 let temporaryFiles = {};
 
 setTimeout(assembleUsers, 10, inputDirectory);
-
-step2Emitter.on("done", toMp3);
