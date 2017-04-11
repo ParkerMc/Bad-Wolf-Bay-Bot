@@ -37,7 +37,7 @@ function next() {
   if (userList.length > 1){
     botChannel.send(userList[0][0].username + " is done passing to " + userList[1][0].username + ".");
     userList.splice(0, 1);
-    userList[0][0].dmChannel.send(ifThereMsg);
+    userList[0][0].send(ifThereMsg);
     userRR = "";
     currentUser = userList[0][0];
     accepted = false;
@@ -46,7 +46,7 @@ function next() {
     userList.pop();
     file.save2Array("userList", userList);
     botChannel.send("RR done sending to Riza.");
-    var userDM = botChannel.members.find(i => i.user.username.toLowerCase() == settings.sendTo.toLowerCase()).user.dmChannel;
+    var userDM = botChannel.members.find(i => i.user.username.toLowerCase() == settings.sendTo.toLowerCase()).user;
     for (var i = 0; i < RR.length; i++) {
       userDM.send(RR[i]);
     }
@@ -56,7 +56,7 @@ function next() {
 function timeout(user){
   setTimeout(function(user) {
     if(user.username == currentUser.username&&accepted == false){
-      user.dmChannel.send("You took too long if this is the first you missed it you will be moved to the end.");
+      user.send("You took too long if this is the first you missed it you will be moved to the end.");
       botChannel.send(user.username + "took too long passing on.")
       if (alreadyTimedout.indexOf(user.username) > -1){
         alreadyTimedout.push(user.username);
@@ -156,9 +156,9 @@ bot.on('message', message => {
     }else if (message.content.toLowerCase().match(/^\?remove/)){
       userList.splice(0, 1);
       botChannel.send(message.author.username + " denied sending to "+ userList[0][0].username +".");
-      message.author.dmChannel.send("You have denied.");
+      message.author.send("You have denied.");
       updateList();
-      userList[0][0].dmChannel.send(ifThereMsg);
+      userList[0][0].send(ifThereMsg);
       userRR = "";
       currentUser = userList[0][0];
       accepted = false;
@@ -166,22 +166,22 @@ bot.on('message', message => {
     }else if (message.content.toLowerCase().match(/^\?deny/)){
       move(userList, 0, userList.length - 1);
       botChannel.send(message.author.username + " denied sending to "+ userList[0][0].username +".");
-      message.author.dmChannel.send("You have been removed from the list.");
+      message.author.send("You have been removed from the list.");
       updateList();
-      userList[0][0].dmChannel.send(ifThereMsg);
+      userList[0][0].send(ifThereMsg);
       userRR = "";
       currentUser = userList[0][0];
       accepted = false;
       timeout(currentUser);
     }else if (message.content.toLowerCase().match(/^\?done/)&&accepted == true){
-      message.author.dmChannel.send("Added thank you.");
+      message.author.send("Added thank you.");
       if(message.content.substring(6) != ""){
         userRR += "\n" + message.content.substring(6);
       }
       RR.push(userRR);
       next();
     }else if (message.content.toLowerCase().match(/\?done$/)&&accepted == true){
-      message.author.dmChannel.send("Added thank you.");
+      message.author.send("Added thank you.");
       RR.push(userRR+"\n"+message.content.substring(0, message.content.length - 5));
       userRR = "";
       next();
@@ -374,9 +374,10 @@ bot.on('message', message => {
       }
     }else if(message.content.toLowerCase().match(/^\?quotes$/)){
       for (var i = 0; i < quotes.length; i++) {
-        message.author.dmChannel.send((i+1) + ": " + quotes[i]);
+	console.log(i);
+        message.author.send((i+1) + ": " + quotes[i]);
       }
-      message.author.dmChannel.send("Done.");
+      message.author.send("Done.");
     }else if(message.content.toLowerCase().match(/^\?quote/)){
       if(message.content.substring(7) == ""){
         message.channel.send(quotes[randomInt(0, quotes.length)]);
@@ -392,7 +393,7 @@ bot.on('message', message => {
         message.channel.send("You are not authorized to run this command.");
       }else{
         botChannel.send(message.author.username+" has started the RR " + userList[0][0].username + " will start.");
-        userList[0][0].dmChannel.send(ifThereMsg);
+        userList[0][0].send(ifThereMsg);
         currentUser = userList[0][0];
         userRR = "";
         RR = [];
