@@ -15,23 +15,15 @@ let total = 0;
 let complete = 0;
 
 var totalFiles = 0;
+var wait = true;
 
 const frequency = 48000;
 
-let countFiles = (inputDirectory) => {
-	fs.readdir(inputDirectory, (err, files) => {
-		files.forEach((file) => {
-			let ext = path.extname(file);
-			if (ext === '.opus_string') {
-				totalFiles++;
-			}
-		});
-	});
-};
-
 let countDone = (inputDirectory) => {
-	while (count<totalFiles) {
+        var count = 0;
+	while (count<totalFiles&&wait) {
 		count = 0;
+		console.log(count);
 		fs.readdir(inputDirectory, (err, files) => {
 			files.forEach((file) => {
 				let ext = path.extname(file);
@@ -78,14 +70,18 @@ let convertOpusStringToRawPCM = (inputPath, filename) => {
 	});
 };
 
-let convertAllOpusStringToRawPCM = (inputDirectory) => {
+var convertAllOpusStringToRawPCM = (inputDirectory) => {
+	totalFiles = 0;
 	fs.readdir(inputDirectory, (err, files) => {
 		files.forEach((file) => {
 			let ext = path.extname(file);
 			if (ext === '.opus_string') {
+				totalFiles++;
+				console.log(totalFiles);
 				convertOpusStringToRawPCM(path.join(inputDirectory, file), path.basename(file, ext));
 			}
 		});
+	wait = false;
 	});
 };
 
@@ -296,24 +292,28 @@ let assembleUsers = (inputDirectory) => {
 	});
 };
 
+// Define global users object
+let users = {};
+let temporaryFiles = {};
+let inputDirectory = "/home/parkermc/RRbot/recordings";
+                let podcastName = inputDirectory.split(path.sep);
+                podcastName = podcastName[podcastName.length - 1];
+                let podcastTimestamp = extractTimestamp(podcastName);
+
+
 module.exports = { convert: function(){
-		let inputDirectory = "recordings";
-		countFiles();
+		wait = true;
 		convertAllOpusStringToRawPCM(inputDirectory);
-
+console.log(wait);
+//		while (wait){}
+		console.log(wait);
 		// And then do the rest
-		let podcastName = inputDirectory.split(path.sep);
-		podcastName = podcastName[podcastName.length - 1];
-		let podcastTimestamp = extractTimestamp(podcastName);
 
-		// Define global users object
-		let users = {};
-		let temporaryFiles = {};
 
-		setTimeout(assembleUsers, 10, inputDirectory);
-		countDone();
+		setTimeout(assembleUsers, 25, inputDirectory);
+		countDone(inputDirectory);
 
-		var output = file_system.createWriteStream(Date.now()+'.zip');
+		var output = fs.createWriteStream(inputDirectory+"/"+Date.now()+'.zip');
 		var archive = archiver('zip');
 
 		output.on('close', function () {
@@ -328,14 +328,17 @@ module.exports = { convert: function(){
 		archive.pipe(output);
 		archive.glob(inputDirectory+'/*.mp3');
 		archive.finalize();
-
+		console.log("done");
 		fs.readdir(inputDirectory, (err, files) => {
 			files.forEach((file) => {
 				let ext = path.extname(file);
 				if (ext !== '.zip') {
-					fs.unlinkSync(path.join(inputDirectory, file));
+					console.log(ext);
+				//	fs.unlinkSync(path.join(inputDirectory, file));
 				}
 			});
 		});
 	}
 }
+process.on('unhandledRejection', r => console.log(r));
+module.exports.convert();
