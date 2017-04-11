@@ -119,7 +119,7 @@ let convertDurationToSamples = (duration) => {
 
 let reassemble = (config) => {
 	return new Promise((resolve, reject) => {
-		let outputPath = path.join(config.id);
+		let outputPath = path.join(config.id+".mp3");
 		let inputCommandArray = [];
 		let filterPadCommandArray = [];
 		let filterMergeCommandArray = [];
@@ -180,11 +180,10 @@ let reassemble = (config) => {
 			})).then(() => {
 				reassemble(subConfig).then((code) => {
 					resolve(code);
-					toMp3();
 				}).catch(reject);
 			}).catch(reject);
 		} else {
-			command = `ffmpeg -y ${inputCommand} -filter_complex "${filterCommand}" -map "[a]" -f s16le -ar 48k -ac 2 ${outputPath}`;
+			command = `ffmpeg -y ${inputCommand} -filter_complex "${filterCommand}" -map "[a]" -acodec libmp3 ${outputPath}`;
 			console.log(command);
 			doCommand(command).then(resolve).catch(reject);
 		}
@@ -299,4 +298,3 @@ let podcastTimestamp = extractTimestamp(podcastName);
 let users = {};
 let temporaryFiles = {};
 
-setTimeout(assembleUsers, 10, inputDirectory);
