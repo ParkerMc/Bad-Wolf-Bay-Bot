@@ -1,11 +1,11 @@
 'use strict';
 
 var events = require('events');
-const lame = require('lame');
 const fs = require('fs');
 const path = require('path');
 const opus = require('node-opus');
 const child_process = require('child_process');
+var archiver = require('archiver');
 
 const rate = 48000;
 const frame_size = 1920;
@@ -14,7 +14,34 @@ const channels = 2;
 let total = 0;
 let complete = 0;
 
+var totalFiles = 0;
+
 const frequency = 48000;
+
+let countFiles = (inputDirectory) => {
+	fs.readdir(inputDirectory, (err, files) => {
+		files.forEach((file) => {
+			let ext = path.extname(file);
+			if (ext === '.opus_string') {
+				totalFiles++;
+			}
+		});
+	});
+};
+
+let countDone = (inputDirectory) => {
+	while (count<totalFiles) {
+		count = 0;
+		fs.readdir(inputDirectory, (err, files) => {
+			files.forEach((file) => {
+				let ext = path.extname(file);
+				if (ext === '.mp3') {
+					count++;
+				}
+			});
+		});
+	}
+};
 
 let convertOpusStringToRawPCM = (inputPath, filename) => {
 	total++;
@@ -267,36 +294,48 @@ let assembleUsers = (inputDirectory) => {
 			}
 		}
 	});
-	console.log("done");
 };
 
-let toMp3 = () => {
-	var inputDirectory = "recordings";
-	fs.readdir(inputDirectory, (err, files) => {
-		files.forEach((file) => {
-			let ext = path.extname(file);
-				if (ext === '') {
-					fs.createReadStream( process.argv[2] || path.resolve(__dirname, path.join(inputDirectory, file)))
-					.pipe(new lame.Encoder({ channels: 2, bitDepth: 16, sampleRate: 44100 }))
-					.pipe(fs.createWriteStream(path.resolve(__dirname, path.join(inputDirectory, file+'.mp3'))))
-					.on('close', function () {
-						console.error('done: ' + file);
+module.exports = { convert: function(){
+		let inputDirectory = "recordings";
+		countFiles();
+		convertAllOpusStringToRawPCM(inputDirectory);
+
+		// And then do the rest
+		let podcastName = inputDirectory.split(path.sep);
+		podcastName = podcastName[podcastName.length - 1];
+		let podcastTimestamp = extractTimestamp(podcastName);
+
+		// Define global users object
+		let users = {};
+		let temporaryFiles = {};
+
+		setTimeout(assembleUsers, 10, inputDirectory);
+		countDone();
+
+		var output = file_system.createWriteStream(Date.now()+'.zip');
+		var archive = archiver('zip');
+
+		output.on('close', function () {
+		    console.log(archive.pointer() + ' total bytes');
+		    console.log('archiver has been finalized and the output file descriptor has closed.');
+		});
+
+		archive.on('error', function(err){
+		    throw err;
+		});
+
+		archive.pipe(output);
+		archive.glob(inputDirectory+'/*.mp3');
+		archive.finalize();
+
+		fs.readdir(inputDirectory, (err, files) => {
+			files.forEach((file) => {
+				let ext = path.extname(file);
+				if (ext !== '.zip') {
+					fs.unlinkSync(path.join(inputDirectory, file));
+				}
 			});
-		}
-	});
-  });
-};
-
-let inputDirectory = "recordings";
-convertAllOpusStringToRawPCM(inputDirectory);
-
-// And then do the rest
-let podcastName = inputDirectory.split(path.sep);
-podcastName = podcastName[podcastName.length - 1];
-let podcastTimestamp = extractTimestamp(podcastName);
-
-// Define global users object
-let users = {};
-let temporaryFiles = {};
-
-setTimeout(assembleUsers, 10, inputDirectory);
+		});
+	}
+}
