@@ -279,7 +279,7 @@ let assembleUsers = (inputDirectory) => {
 
 // And then do the rest
 
-let inputDirectory = path.join('podcasts', process.argv[2]);
+let inputDirectory = "recordings";
 let podcastName = inputDirectory.split(path.sep);
 podcastName = podcastName[podcastName.length - 1];
 let podcastTimestamp = extractTimestamp(podcastName);
