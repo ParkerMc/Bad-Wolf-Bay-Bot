@@ -272,7 +272,8 @@ let assembleUsers = (inputDirectory) => {
 	step2Emitter.emit("done")
 };
 
-let toMp3 = (inputDirectory) => {
+let toMp3 = () => {
+	var inputDirectory = "recordings";
 	fs.readdir(inputDirectory, (err, files) => {
 		files.forEach((file) => {
 			let ext = path.extname(file);
@@ -302,4 +303,4 @@ let temporaryFiles = {};
 
 setTimeout(assembleUsers, 10, inputDirectory);
 
-step2Emitter.on("done", toMp3, inputDirectory);
+step2Emitter.on("done", toMp3);
