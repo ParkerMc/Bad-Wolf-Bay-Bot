@@ -1,454 +1,160 @@
-var file = require('./file.js');
-var settings = require('./settings.js');
-//var audiotools = require('./audiotools.js');
+const fs = require('fs');
+const path = require('path');
 const Discord = require('discord.js');
-var fs = require('fs');
-process.on('unhandledRejection', r => console.log(r));
+const settings = require('./settings.js');
 
+process.on('unhandledRejection', r => console.log(r)); // Helps with errors
+const bot = new Discord.Client(); // Set bot object
+var version = "V1.2" // Version
+var modules = []; // Array to hold all of the modules
 
-const bot = new Discord.Client();
-var version = "V1.1"
-var note = "";
-var userList = [];
-var RR = [];
-var userRR = "";
-var botChannel = null;
-var started = false;
-var quotes = [];
-var accepted = false;
-var currentUser = null;
-var alreadyTimedout = [];
-var timeToResond = 5;
-var vc = false;
-var vcc = null;
-var timeToResondText = "5 mins" ;
-var ifThereMsg = "It is your turn for the RR please run \"?accept\" to accept, \"?deny\" to be moved to the end of the list, or \"?remove\" to be skiped and removed from the list. You will be skiped after " + timeToResondText + ".";
-var endMessage = "Send me your when you are done used \"?done\" to add your writeing or you can use \"?deny\" or \"?remove\"."
-var _voiceConnections = new Map();
-var _voiceReceivers = new Map();
-var _writeStreams = new Map();
-var recordingPath = "./recordings/";
-
-
-function next() {
-  if (userList.length > 1){
-    botChannel.send(userList[0][0].username + " is done passing to " + userList[1][0].username + ".");
-    userList.splice(0, 1);
-    userList[0][0].dmChannel.send(ifThereMsg);
-    userRR = "";
-    currentUser = userList[0][0];
-    accepted = false;
-    timeout(currentUser);
-  }else{
-    userList.pop();
-    file.save2Array("userList", userList);
-    botChannel.send("RR done sending to Riza.");
-    var userDM = botChannel.members.find(i => i.user.username.toLowerCase() == settings.sendTo.toLowerCase()).user.dmChannel;
-    for (var i = 0; i < RR.length; i++) {
-      userDM.send(RR[i]);
-    }
-    started = false;
-  }
-}
-function timeout(user){
-  setTimeout(function(user) {
-    if(user.username == currentUser.username&&accepted == false){
-      user.dmChannel.send("You took too long if this is the first you missed it you will be moved to the end.");
-      botChannel.send(user.username + "took too long passing on.")
-      if (alreadyTimedout.indexOf(user.username) > -1){
-        alreadyTimedout.push(user.username);
-        move(userList, 0, userList.length - 1);
-      }else{
-        userList.splice(0, 1);
-      }
-      updateList();
-      next();
-    }
-  }, timeToResond*60000, user);
-}
-
-function randomInt (low, high) {
-    return Math.floor(Math.random() * (high - low) + low);
-}
-
-function isAdmin(message){
-  var allRoles = message.channel.guild.roles;
-  var roles = [];
-  allRoles.forEach(function(i){if (settings.adminRoles.indexOf(i.name.toLowerCase()) > -1) roles.push(i);});
-  for (var i = 0; i < roles.length; i++) {
-    if(roles[i].members.get(message.author.id) !== undefined) return true;
-  }
-  if(settings.adminUsers.indexOf(message.author.username.toLowerCase()) > -1) return true;
-  return false;
-}
-
-function isPreAdmin(message){
-  var allRoles = message.channel.guild.roles;
-  var roles = [];
-  allRoles.forEach(function(i){if (settings.preAdminRoles.indexOf(i.name.toLowerCase()) > -1) roles.push(i);});
-  for (var i = 0; i < roles.length; i++) {
-    if(roles[i].members.get(message.author.id) !== undefined) return true;
-  }
-  if(settings.adminUsers.indexOf(message.author.username.toLowerCase()) > -1) return true;
-  return false;
-}
-
-function move(arr, old_index, new_index) {
-    if (new_index >= arr.length) {
-        var k = new_index - arr.length;
-        while ((k--) + 1) {
-            arr.push(undefined);
+fs.readdirSync("./modules") // Get all folders in modules and loop though them
+  .filter(file => fs.statSync(path.join("./modules", file)).isDirectory()).forEach(function(i){
+    fs.readdir(path.join("./modules", i), (err, files) => { // Get files
+      files.forEach(file => { // And loop though those
+        if (file == "main.js"){ // If file name is main.js add it to the modules array
+          modules.push(require("./" + path.join("./modules", path.join(i, file))));
         }
-    }
-    arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
-    return arr; // for testing purposes
-}
+      });
+    })
+  });
 
-function userInList(user) {
-  for (var i = 0; i < userList.length; i++) {
-    if (userList[i][0].id == user.id) {
-      return true;
-    }
+  function regexEscape(str) {
+      return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
   }
-  return false;
+
+function reg(regexa, input, regexb) {
+  var flags;
+  //could be any combination of 'g', 'i', and 'm'
+  flags = 'gi';
+  input = regexEscape(input);
+  return new RegExp(regexa + input + regexb, flags);
 }
 
-function updateList(){
-  var msg = "Updated user list: "
-  userList.forEach(function(i) {
-    if (userList[0][0].id == i[0].id){
-      msg += i[0].username;
-    }else if (userList[userList.length-1][0].id == i[0].id){
-      msg += ", and " + i[0].username;
-    }else{
-      msg += ", " + i[0].username;
+function atAboveRole(message, role) { // Get if user is at or about the role provied
+  var roles = []; // Stores all of the roles that are at above
+  var index = settings.roles.indexOf(role.toLowerCase()); // Index of the lowest role
+  for (var i = index; i < settings.roles.length; i++) {
+    roles.push(settings.roles[i]); // Add roles that are higher than the lowest allowed
+  }
+  return inRole(message, roles); // Check if in one of roles
+}
+
+function inRole(message, inRoles){
+  var roles = []; // Store the roles objects
+  message.channel.guild.roles.forEach( // For each of roles in the server add it if the name is in array
+    function(i){if (inRoles.indexOf(i.name.toLowerCase()) > -1) roles.push(i);});
+  for (var i = 0; i < roles.length; i++) { // Loop  though roles and see if member is part any of them
+    if(roles[i].members.get(message.author.id) !== undefined) return true;
+  }
+  return false; // Else false
+}
+
+bot.on('ready', function(){
+  bot.user.setGame(version + " By: @ParkerMc"); // Set game #sellOut
+  modules.forEach(function(i) { // Loop thought modules
+    if(i["onReady"] !== undefined){ // If onReady if defined run it
+      i.onReady(bot);
     }
   });
-  if (userList.length == 0) msg = "Updated list is now empty";
-  botChannel.send(msg + ".");
-  file.save2Array("userList", userList);
-
-}
-bot.on('ready', async function(){
   console.log('Connected!');
-  //bot.user.setGame("Testing");
-  bot.user.setGame(version + " By: @ParkerMc");
-  botChannel = bot.channels.find(i => i.id === settings.botChannel);
-  userList = file.load2Array("userList");
-  if (userList.length==0) userList=[];
-  for (var i = 0; i < userList.length; i++) {
-    userList[i][0] = await bot.fetchUser(userList[i][0].replace("<@", "").replace(">",""));//.then(function(user){return user;} );
-  }
 });
 
 bot.on('message', message => {
-  if (currentUser == message.author && message.channel.type == "dm"){
-    if (message.content.toLowerCase().match(/^\?accept/)){
-      accepted = true;
-      botChannel.send(message.author.username + " accepted.");
-      for (var i = 0; i < RR.length; i++) {
-        message.channel.send(RR[i]);
-      }
-      message.channel.send(endMessage);
-    }else if (message.content.toLowerCase().match(/^\?remove/)){
-      userList.splice(0, 1);
-      botChannel.send(message.author.username + " denied sending to "+ userList[0][0].username +".");
-      message.author.dmChannel.send("You have denied.");
-      updateList();
-      userList[0][0].dmChannel.send(ifThereMsg);
-      userRR = "";
-      currentUser = userList[0][0];
-      accepted = false;
-      timeout(currentUser);
-    }else if (message.content.toLowerCase().match(/^\?deny/)){
-      move(userList, 0, userList.length - 1);
-      botChannel.send(message.author.username + " denied sending to "+ userList[0][0].username +".");
-      message.author.dmChannel.send("You have been removed from the list.");
-      updateList();
-      userList[0][0].dmChannel.send(ifThereMsg);
-      userRR = "";
-      currentUser = userList[0][0];
-      accepted = false;
-      timeout(currentUser);
-    }else if (message.content.toLowerCase().match(/^\?done/)&&accepted == true){
-      message.author.dmChannel.send("Added thank you.");
-      if(message.content.substring(6) != ""){
-        userRR += "\n" + message.content.substring(6);
-      }
-      RR.push(userRR);
-      next();
-    }else if (message.content.toLowerCase().match(/\?done$/)&&accepted == true){
-      message.author.dmChannel.send("Added thank you.");
-      RR.push(userRR+"\n"+message.content.substring(0, message.content.length - 5));
-      userRR = "";
-      next();
-    }else if (!message.content.toLowerCase().match(/^\?/)&&accepted == true) {
-      userRR += "\n" + message.content;
-    }
-    }else {
-
-    if (message.content.toLowerCase().match(/^\?help/)) {
-      if (message.content.toLowerCase().match(/^\?help$/)){
-        message.channel.send(settings.help.main);
-      }else{
-        if ( settings.help[message.content.toLowerCase().replace("?help ", "")] !== undefined ) {
-          message.channel.send(settings.help[message.content.toLowerCase().replace("?help ", "")]);
-        }else{
-          message.channel.send("Command " + message.content.toLowerCase().replace("?help ", "") + " does not exist.");
+  if (message.content.toLowerCase().match(/^\?help$/)){ // If message is ?help
+    var msg = "```\n" + settings.description + "\n"; // Add start stuf
+    modules.forEach(function(i) {
+      msg += "\n" + i.name + ":"; // Added category
+      i.commands.forEach(function(j) { // For each command in that module
+        if(atAboveRole(message, j.rank)){ // Check if user can run command
+          msg += "\n  " + j.command; // Add command and description
+          msg += "          ".substring(j.command.length) + j.description;
         }
-      }
-    }else if(message.content.toLowerCase().match(/^\?add /)){
-      if (message.content.substring(5).split(" ").length < 2){
-        message.channel.send("Not enough arguments command format is `?add <timezone> <time restrictions>`.");
-      }else{
-        if (userInList(message.author)){
-          message.channel.send("You are already in the list.");
-        }else{
-          userList.push([message.author, message.content.substring(5)]);
-          updateList();
-          message.channel.send("Added.");
-        }
-      }
-    }else if(message.content.toLowerCase().match(/^\?remove$/)){
-      if (!userInList(message.author)){
-        message.channel.send("You are not in the list.");
-      }else{
-        for (var i = 0; i < userList.length; i++) {
-          if (userList[i][0].id == message.author.id){
-            userList.splice(i, 1);
-            updateList();
-            message.channel.send("Removed.");
-            return;
-          }
-        }
-      }
-    }else if(message.content.toLowerCase().match(/^\?adda /)){
-      if(!isAdmin(message)){
-        message.channel.send("You are not authorized to run this command.")
-      }else{
-        if (message.content.substring(6).split(" ").length < 3){
-          message.channel.send("Not enough arguments command format is `?addA <username> <timezone> <time restrictions>`.")
-        }else{
-          var username = message.content.substring(6).split(" ")[0];
-          var user = message.channel.members.find(i => i.user.username.toLowerCase() == username.toLowerCase());
-          var i = 0;
-          while (user === null) {
-            i++;
-            if (message.content.substring(6).split(" ").length < i){
-              message.channel.send("User not found");
-              return;
+      });
+    });
+    msg += "\nHelp:"; // Add help module info
+    msg += "\n  help      Shows this message.";
+    msg += "\n\nType ?help command for more info on a command.";
+    msg += "\nYou can also type ?help category for more info on a category.```";
+    message.channel.send(msg); // Send message
+  }else if (message.content.toLowerCase().match(/^\?help /)) { // If it is help with arg
+    // TODO: Move to it's own module
+    var found = false; // If command is found
+    modules.forEach(function(i) { // Loop though each of the modules and commands
+      i.commands.forEach(function(j) {
+        if (j.command.toLowerCase() == message.content.substring(6).toLowerCase()){
+          // TODO: add if channel and stuff like that
+          //If the command matches the arg
+          var msg = "```" + j.description; // Start message and add description
+          for (var k = 0; k < j.argModes.length; k++) { // Loop though all of the possable arg modes
+            if (j.argModes[k] != j.argModes[0]){ // If it is not the first add newline or
+              msg += "\nor"
             }
-            username += " " + message.content.substring(6).split(" ")[i];
-            user = message.channel.members.find(i => i.user.username.toLowerCase() == username.toLowerCase());
+            if (j.argModes[k] == "none") { // If the mode is none just add command
+              msg += "\n?" + j.command;
+            }else if (j.argModes[k] == "after") { // If the mode is after add the command
+              msg += "\n?" + j.command;
+              j.args.forEach(arg => msg += " <" + arg + ">"); // Then all of the args
+            }else if (j.argModes[k] == "before") { // If the mode is before add all the args
+              msg += "\n";
+              j.args.forEach(arg => msg += "<" + arg + "> ");
+              msg += "?" + j.command; // Then the command
+            }
           }
-          if (message.content.substring(6).replace(username+" ", "").split(" ").length < 2){
-            message.channel.send("Not enough arguments command format is `?addA <username> <timezone> <time restrictions>`.")
-          }else{
-            user = user.user;
-            userList.push([user, message.content.substring(6).replace(username+" ", "")]);
-            updateList();
-            message.channel.send("Added.");
-         }
+          msg += "```"; // Add end code brakets
+          message.channel.send(msg); // Send message
+          found = true;
         }
-      }
-    }else if(message.content.toLowerCase().match(/^\?move /)){
-      if(!isAdmin(message)){
-        message.channel.send("You are not authorized to run this command.")
-      }else{
-        var arr = message.content.toLowerCase().replace("?move ", "").split(" ");
-        if (arr.length < 2){
-          message.channel.send("Not enough arguments command format is `?move <username> <index #>`.")
-        }else{
-          if (!isNaN(arr[arr.length-1])){
-            message.channel.send("Error: `" + arr[arr.length-1] + "` is not a number.")
-          }else{
-            if (parseInt(arr[arr.length-1]) > userList.length){
-              message.channel.send("Error: number out of range.");
-            }else{
-              arr.pop();
-              var username = arr.join(" ");
-              var arr = message.content.toLowerCase().replace("?move ", "").split(" ");
-              for (var i = 0; i < userList.length; i++) {
-                if (userList[i][0].username.toLowerCase() == username){
-                  move(userList, i, parseInt(arr[arr.length-1])-1);
-                  updateList();
-                  message.channel.send("Moved.");
-                  return
+      });
+    });
+    // TODO: Add catagorys info
+    if(!found){ // If not found say that
+      message.channel.send("No information found on that.");
+    }
+  }else if (message.content.toLowerCase().match(/\s\?/)||message.content.toLowerCase().match(/^\?/)){ // If it is a command
+    // Get the command with regex and remove extra space (if it is there)
+    var command = message.content.toLowerCase().match(/\?(.)*\b/g)[0].split(" ")[0];
+    modules.forEach(function(i) { // Loop though each of the modules and commands
+      i.commands.forEach(function(j) {
+        if ("?"+j.command.toLowerCase() == command){ // If it is the command we are looking for
+          // TODO: Comment
+          if(atAboveRole(message, j.rank)&&((message.channel.type == "dm"&&j.dm)||(message.channel.type == "text"&&j.channel))){
+            if(j.argModes.indexOf("none") > -1&&message.content.toLowerCase().match(reg("^",command, "$"))){
+              var continueCommand = true;
+              j.otherReqs.forEach(function(k){
+                if (!k("", message)){
+                  continueCommand = false;
                 }
+              });
+              if(continueCommand){
+                j.function("", message);
               }
-              message.channel.send("User not found.");
+            }else if(j.argModes.indexOf("after") > -1&&message.content.toLowerCase().match(reg("^",command, "\\s"))){
+              var args = message.content.substring(command.length+1).split(" ");
+              if (args.length >= j.args.length){
+                args = args.join(" ");
+                var continueCommand = true;
+                j.otherReqs.forEach(function(k){
+                  if (!k(args, message)){
+                    continueCommand = false;
+                  }
+                });
+                if(continueCommand){
+                  j.function(args, message);
+                }
+              }else {
+                var msg = "Not enough arguments command format is `?" + j.command;
+                j.args.forEach(arg => msg += " <" + arg + ">"); // Then all of the args
+                msg += "`";
+                message.channel.send(msg);
+              }
             }
+            // TODO: add before
           }
         }
-      }
-    }else if(message.content.toLowerCase().match(/^\?removea /)){
-      if(!isAdmin(message)){
-        message.channel.send("You are not authorized to run this command.")
-      }else{
-        var username = message.content.toLowerCase().replace("?removea ", "");
-        if (username == ""){
-          message.channel.send("Not enough arguments command format is `?removeA <username>`.")
-        }else{
-          for (var i = 0; i < userList.length; i++) {
-            if (userList[i][0].username.toLowerCase() == username){
-              userList.splice(i, 1);
-              updateList();
-              message.channel.send("Removed.");
-              return
-            }
-          }
-          message.channel.send("User not found.");
-        }
-      }
-    }else if(message.content.toLowerCase().match(/^\?list$/)){
-      if(!isAdmin(message)){
-        message.channel.send("You are not authorized to run this command.")
-      }else{
-        var msg = "User list: "
-        userList.forEach(function(i) {
-          if (userList[0][0].id == i[0].id){
-            msg += i[0].username;
-          }else if (userList[userList.length-1][0].id == i[0].id){
-            msg += ", and " + i[0].username;
-          }else{
-            msg += ", " + i[0].username;
-          }
-        });
-        if (userList.length == 0) msg = "List is empty";
-        message.channel.send(msg + ".");
-      }
-    }else if(message.content.toLowerCase().match(/^\?note$/)){
-      if(!isAdmin(message)){
-        message.channel.send("You are not authorized to run this command.")
-      }else{
-        message.channel.send(note);
-      }
-    }else if(message.content.toLowerCase().match(/^\?setnote /)){
-      if(!isAdmin(message)){
-        message.channel.send("You are not authorized to run this command.")
-      }else{
-        if (message.content.substring(9).replace(" ", "") == ""){
-          message.channel.send("Not enough arguments command format is `?setNote <note>`.");
-        }else{
-          note = message.content.substring(9);
-          file.save("note", note)
-          message.channel.send("Note set.");
-        }
-      }
-    }else if(message.content.toLowerCase().match(/^\?timezones$/)){
-      if(!isAdmin(message)){
-        message.channel.send("You are not authorized to run this command.")
-      }else{
-        var msg = "User list: "
-        userList.forEach(function(i) {
-          if (userList[0][0].id == i[0].id){
-            msg += "\n" + i[0].username + " - " + i[1];
-          }else if (userList[userList.length-1][0].id == i[0].id){
-            msg += ", and \n" + i[0].username + " - " + i[1];
-          }else{
-            msg += ",\n" + i[0].username + " - " + i[1];
-          }
-        });
-        if (userList.length == 0) msg = "List is empty";
-        message.channel.send(msg + ".");
-      }
-    }else if(message.content.toLowerCase().match(/^\?addquote /)){
-      if(!isPreAdmin(message)){
-        message.channel.send("You are not authorized to run this command.")
-      }else{
-        if(message.content.substring(10) == ""){
-          message.channel.send("Not enough arguments command format is `?addquote <quote>`.");
-        }else{
-          quotes.push(message.content.substring(10));
-          message.channel.send("Quote #" + (quotes.indexOf(message.content.substring(10)) + 1) + " added.")
-          file.saveArray("quotes", quotes);
-        }
-      }
-    }else if(message.content.toLowerCase().match(/^\?quotes$/)){
-      for (var i = 0; i < quotes.length; i++) {
-        message.author.dmChannel.send((i+1) + ": " + quotes[i]);
-      }
-      message.author.dmChannel.send("Done.");
-    }else if(message.content.toLowerCase().match(/^\?quote/)){
-      if(message.content.substring(7) == ""){
-        message.channel.send(quotes[randomInt(0, quotes.length)]);
-      }else{
-        if (quotes[parseInt(message.content.substring(7))-1] === undefined) {
-          message.channel.send("Quote does not exist.");
-        }else{
-          message.channel.send(quotes[parseInt(message.content.substring(7))-1]);
-        }
-      }
-    }else if (message.content.match(/^\?start$/)) {
-      if(!isAdmin(message)){
-        message.channel.send("You are not authorized to run this command.");
-      }else{
-        botChannel.send(message.author.username+" has started the RR " + userList[0][0].username + " will start.");
-        userList[0][0].dmChannel.send(ifThereMsg);
-        currentUser = userList[0][0];
-        userRR = "";
-        //RR = [];
-        accepted = false;
-        timeout(currentUser);
-      }
-    }else if (message.content.match(/^\?record/)) {
-      var channels = [];
-      bot.channels.forEach(function(i){ if (i.type == "voice") channels.push(i);});
-        for (var i = 0; i < channels.length; i++) {
-          if (channels[i].members.get(message.author.id) != undefined){
-            vcc = channels[i];
-            vc = true;
-            channels[i].join().then((voiceConnection) => {
-          			_voiceConnections.set(vcc.id, voiceConnection);
-          			let voiceReceiver = voiceConnection.createReceiver();
-          			voiceReceiver.on('opus', (user, data) => {
-          				let hexString = data.toString('hex');
-          				let writeStream = _writeStreams.get(user.id);
-          				if (!writeStream) {
-          					/* If there isn't an ongoing writeStream and a frame of silence is received then it must be the
-          					 *   left over trailing silence frames used to signal the end of the transmission.
-          					 * If we do not ignore this frame at this point we will create a new writeStream that is labelled
-          					 *   as starting at the current time, but there will actually be a time delay before it is further
-          					 *   populated by data once the user has begun speaking again.
-          					 * This delay would not be captured however since no data is sent for it, so the result would be
-          					 *   the audio fragments being out of time when reassembled.
-          					 * For this reason a packet of silence cannot be used to create a new writeStream.
-          					 */
-          					if (hexString === 'f8fffe') {
-          						return;
-          					}
-          					let outputPath = recordingPath + `${user.username}-${Date.now()}.opus_string`;
-          					writeStream = fs.createWriteStream(outputPath);
-          					_writeStreams.set(user.id, writeStream);
-          				}
-          				writeStream.write(`,${hexString}`);
-          			});
-          			_voiceReceivers.set(vcc.id, voiceReceiver);
-          		}).catch(console.error);
-            return;
-          }
-        }
-        message.channel.send("You are not in a voice channel.");
-    }else if(message.content.match(/^\?stop/)){
-      if (_voiceReceivers.get(vcc.id)&&vc) {
-        _voiceReceivers.get(vcc.id).destroy();
-        _voiceReceivers.delete(vcc.id);
-        _voiceConnections.get(vcc.id).disconnect();
-        _voiceConnections.delete(vcc.id);
-        vc = false;
-        message.channel.send("Converting. When it is done there will be a zip file dated when it is done at http://parkermc.ddns.net/mp3/");
-        audiotools.convert();
-}
-    }
+      });
+    });
+
   }
 });
-
-// Load files
-note = file.load("note");
-started = file.loadBool("started");
-RR = file.loadArray("RR");
-quotes = file.loadArray("quotes");
-if (RR.length == 0) RR = [];
-if (quotes.length == 0) quotes = [];
-if (note.replace(" ", "") == "") note = "Please write 3 sentences in 15 minutes that build on things people have written before you.";
-bot.login("");
+bot.login("token"); // Start the bot

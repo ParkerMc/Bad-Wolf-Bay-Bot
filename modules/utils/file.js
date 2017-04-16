@@ -11,7 +11,12 @@ module.exports = {
     }
       return "";
   },
-
+  loadJson: function(name){
+    if (exists(name)){
+      return JSON.parse(fs.readFileSync(name).toString());
+    }
+      return JSON.parse("{}");
+  },
   loadBool: function(name){
     if (exists(name)){
       if (fs.readFileSync(name).toString() == "true") {
@@ -45,6 +50,12 @@ module.exports = {
   save: function(name, text){
     var file = fs.createWriteStream(name);
     file.write(text);
+    file.end();
+  },
+
+  saveJson: function(name, json){
+    var file = fs.createWriteStream(name);
+    file.write(JSON.stringify(text));
     file.end();
   },
 
