@@ -118,7 +118,7 @@ bot.on('message', message => {
       i.commands.forEach(function(j) {
         if ("?"+j.command.toLowerCase() == command){ // If it is the command we are looking for
           // TODO: Comment
-          if(atAboveRole(message, j.rank)&&((message.channel.type == "dm"&&j.dm)||(message.channel.type == "text"&&j.channel))){
+          if(((message.channel.type == "dm"&&j.dm)||(message.channel.type == "text"&&j.channel&&atAboveRole(message, j.rank)))){
             if(j.argModes.indexOf("none") > -1&&message.content.toLowerCase().match(reg("^",command, "$"))){
               var continueCommand = true;
               j.otherReqs.forEach(function(k){
