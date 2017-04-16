@@ -42,7 +42,7 @@ module.exports = {
       command: "addquote",
       argModes: ["after"],
       args: ["quote"],
-      dm: true,
+      dm: false,
       channel: true,
       rank: "Spawn",
       otherReqs: [],
