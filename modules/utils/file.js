@@ -55,7 +55,7 @@ module.exports = {
 
   saveJson: function(name, json){
     var file = fs.createWriteStream(name);
-    file.write(JSON.stringify(text));
+    file.write(JSON.stringify(json));
     file.end();
   },
 
