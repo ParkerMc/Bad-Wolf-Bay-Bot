@@ -84,6 +84,7 @@ bot.on('message', message => {
       i.commands.forEach(function(j) {
         if (j.command.toLowerCase() == message.content.substring(6).toLowerCase()){
           // TODO: add if channel and stuff like that
+          // TODO: make it work in dm
           //If the command matches the arg
           var msg = "```" + j.description; // Start message and add description
           for (var k = 0; k < j.argModes.length; k++) { // Loop though all of the possable arg modes
