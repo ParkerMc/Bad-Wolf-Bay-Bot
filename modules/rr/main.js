@@ -17,8 +17,32 @@ if (RR["userList"] === undefined){
   RR["userList"] = [];
 }
 
+if (RR["userSettings"] === undefined){
+  RR["userSettings"] = new Map();
+}
+
 function save() {
   file.saveJson("RR.json", RR);
+}
+
+function rrsettings(argString, message) {
+  if(argString == ""){
+    if(RR["userSettings"][message.author.id] === undefined){
+      message.channel.send("You settings have not been set.");
+    }else {
+      var msg = "```";
+      msg += "\nWritername: " + RR["userSettings"][message.author.id]["name"];
+      msg += "\nTimezone: " + RR["userSettings"][message.author.id]["timezone"];
+      msg += "\n```";
+      message.channel.send(msg);
+    }
+  }else {
+    RR["userSettings"][message.author.id] = new Map();
+    RR["userSettings"][message.author.id]["timezone"] = argString.split(" ")[0];
+    RR["userSettings"][message.author.id]["name"] = argString.substring(argString.split(" ")[0].length+1);
+    save();
+    message.channel.send("Settings updated.");
+  }
 }
 
 function updateList(){
@@ -74,6 +98,18 @@ module.exports = {
   onReady: onReady,
   commands:[
     {
+      description: "Settings for the RR.",
+      command: "rrsettings",
+      argModes: ["none", "after"],
+      args: ["timezone", "writer name"],
+      dm: true,
+      channel: true,
+      rank: "@everyone",
+      otherReqs: [],
+      function: rrsettings
+    }
+    /*
+    {
       description: "Accept the RR.",
       command: "accept",
       argModes: ["none"],
@@ -102,6 +138,6 @@ module.exports = {
         return true;
       }],
       function: add
-    }
+    }*/
   ]
 }
