@@ -5,7 +5,7 @@ const settings = require('./settings.js');
 
 process.on('unhandledRejection', r => console.log(r)); // Helps with errors
 const bot = new Discord.Client(); // Set bot object
-var version = "V1.2" // Version
+var version = "V1.2.2" // Version
 var modules = []; // Array to hold all of the modules
 
 fs.readdirSync("./modules") // Get all folders in modules and loop though them
@@ -31,6 +31,7 @@ function reg(regexa, input, regexb) {
   return new RegExp(regexa + input + regexb, flags);
 }
 
+// TODO: move to utils
 function atAboveRole(message, role) { // Get if user is at or about the role provied
   var roles = []; // Stores all of the roles that are at above
   var index = settings.roles.indexOf(role.toLowerCase()); // Index of the lowest role
@@ -39,7 +40,7 @@ function atAboveRole(message, role) { // Get if user is at or about the role pro
   }
   return inRole(message, roles); // Check if in one of roles
 }
-
+// TODO: move to utils
 function inRole(message, inRoles){
   var roles = []; // Store the roles objects
   message.channel.guild.roles.forEach( // For each of roles in the server add it if the name is in array
@@ -85,6 +86,7 @@ bot.on('message', message => {
         if (j.command.toLowerCase() == message.content.substring(6).toLowerCase()){
           // TODO: add if channel and stuff like that
           // TODO: make it work in dm
+          // TODO: Show rank need
           //If the command matches the arg
           var msg = "```" + j.description; // Start message and add description
           for (var k = 0; k < j.argModes.length; k++) { // Loop though all of the possable arg modes
@@ -119,6 +121,7 @@ bot.on('message', message => {
       i.commands.forEach(function(j) {
         if ("?"+j.command.toLowerCase() == command){ // If it is the command we are looking for
           // TODO: Comment
+          // TODO: Add perm error
           if(((message.channel.type == "dm"&&j.dm)||(message.channel.type == "text"&&j.channel&&atAboveRole(message, j.rank)))){
             if(j.argModes.indexOf("none") > -1&&message.content.toLowerCase().match(reg("^",command, "$"))){
               var continueCommand = true;
