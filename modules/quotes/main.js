@@ -9,6 +9,14 @@ function addquote(argString, message){
   quotesL.push(argString); // Add to array
   message.channel.send("Quote #" + (quotesL.indexOf(argString) + 1) + " added.") // Find index and return it
   file.saveArray(filename, quotesL); // Save array to file
+  if(quotesL.indexOf(argString) + 1==200){
+    message.channel.send("We have hit 200! :tada: :tada: :tada:");
+  }
+  if(quotesL.indexOf(argString) + 2==404){
+   quotesL.push("404 quote not found."); // Add to array
+   message.channel.send("ERrOr: rEBoOTInG.");
+   file.saveArray(filename, quotesL); // Save array to file
+  }
 }
 
 function quote(argString, message){
