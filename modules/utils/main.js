@@ -3,7 +3,7 @@ function f(argString, message){
 }
 
 function fiteme(argString, message){
- message.channel.send(message.author.username + "challenges " + argString + " to a fite!");
+ message.channel.send(message.author.username + " challenges " + argString + " to a fite!");
 }
 
 module.exports = {
