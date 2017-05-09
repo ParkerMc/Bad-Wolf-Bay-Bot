@@ -5,7 +5,7 @@ const settings = require('./settings.js');
 
 process.on('unhandledRejection', r => console.log(r)); // Helps with errors
 const bot = new Discord.Client(); // Set bot object
-var version = "V1.2.2" // Version
+var version = "V1.2.4" // Version
 var modules = []; // Array to hold all of the modules
 
 fs.readdirSync("./modules") // Get all folders in modules and loop though them
@@ -62,7 +62,7 @@ bot.on('ready', function(){
 });
 
 bot.on('message', message => {
-  if(message.author.id == bot.user.id){
+  if(message.author.id == bot.user.id){ // Don't let the bot reply to its self
     return;
   }
   if (message.content.toLowerCase().match(/^\?help$/)){ // If message is ?help
@@ -118,7 +118,7 @@ bot.on('message', message => {
       message.channel.send("No information found on that.");
     }
   }else if (message.content.toLowerCase().match(/\s\?/)||message.content.toLowerCase().match(/^\?/)||message.content.toLowerCase().match(/\s\!/)||message.content.toLowerCase().match(/^\!/)){ // If it is a command or ! not ?
-    if(message.content.toLowerCase().match(/\?(.)*\b/g)){
+    if(message.content.toLowerCase().match(/\?(.)*\b/g)){// If they used ? use that regex else use the ! regex
       // Get the command with regex and remove extra space (if it is there)
       var command = message.content.toLowerCase().match(/\?(.)*\b/g)[0].split(" ")[0];
     }else{
@@ -131,7 +131,7 @@ bot.on('message', message => {
           // TODO: Comment
           // TODO: Add perm error
           if(((message.channel.type == "dm"&&j.dm)||(message.channel.type == "text"&&j.channel&&atAboveRole(message, j.rank)))){
-            if(message.content.toLowerCase().match(/\!(.)*\b/g)){
+            if(message.content.toLowerCase().match(/\!(.)*\b/g)){ // If they used a ! send a fun little message
               message.channel.send("DON'T PUT THAT POINTY THING BEHIND ME, I LIKE THEM CURVY!!!");
               return;
             }
@@ -164,13 +164,37 @@ bot.on('message', message => {
                 msg += "`";
                 message.channel.send(msg);
               }
+            }else if(j.argModes.indexOf("before") > -1){
+              var args = message.content.substring(0, message.content - (command.length+1)).split(" ");
+              if (args.length >= j.args.length){
+                args = args.join(" ");
+                var continueCommand = true;
+                j.otherReqs.forEach(function(k){
+                  if (!k(args, message)){
+                    continueCommand = false;
+                  }
+                });
+                if(continueCommand){
+                  j.function(args, message);
+                }
+              }else {
+                var msg = "Not enough arguments command format is `";
+                j.args.forEach(arg => msg += " <" + arg + ">"); // Then all of the args
+                msg += "?" + j.command + "`";
+                message.channel.send(msg);
+              }
             }
-            // TODO: add before
           }
         }
       });
     });
 
+  }else{ //Else it is not a command
+    modules.forEach(function(i) { // Loop thought modules
+      if(i["onMessage"] !== undefined){ // If onMessage if defined run it
+        i.onMessage(bot);
+      }
+    });
   }
 });
 bot.login("token"); // Start the bot
