@@ -62,6 +62,9 @@ bot.on('ready', function(){
 });
 
 bot.on('message', message => {
+  if(message.author.id == bot.user.id){
+    return;
+  }
   if (message.content.toLowerCase().match(/^\?help$/)){ // If message is ?help
     var msg = "```\n" + settings.description + "\n"; // Add start stuf
     modules.forEach(function(i) {
@@ -114,15 +117,24 @@ bot.on('message', message => {
     if(!found){ // If not found say that
       message.channel.send("No information found on that.");
     }
-  }else if (message.content.toLowerCase().match(/\s\?/)||message.content.toLowerCase().match(/^\?/)){ // If it is a command
-    // Get the command with regex and remove extra space (if it is there)
-    var command = message.content.toLowerCase().match(/\?(.)*\b/g)[0].split(" ")[0];
+  }else if (message.content.toLowerCase().match(/\s\?/)||message.content.toLowerCase().match(/^\?/)||message.content.toLowerCase().match(/\s\!/)||message.content.toLowerCase().match(/^\!/)){ // If it is a command or ! not ?
+    if(message.content.toLowerCase().match(/\?(.)*\b/g)){
+      // Get the command with regex and remove extra space (if it is there)
+      var command = message.content.toLowerCase().match(/\?(.)*\b/g)[0].split(" ")[0];
+    }else{
+      // Get the command with regex and remove extra space (if it is there)
+      var command = message.content.toLowerCase().match(/\!(.)*\b/g)[0].split(" ")[0];
+    }
     modules.forEach(function(i) { // Loop though each of the modules and commands
       i.commands.forEach(function(j) {
-        if ("?"+j.command.toLowerCase() == command){ // If it is the command we are looking for
+        if (j.command.toLowerCase() == command.substring(1)){ // If it is the command we are looking for
           // TODO: Comment
           // TODO: Add perm error
           if(((message.channel.type == "dm"&&j.dm)||(message.channel.type == "text"&&j.channel&&atAboveRole(message, j.rank)))){
+            if(message.content.toLowerCase().match(/\!(.)*\b/g)){
+              message.channel.send("DON'T PUT THAT POINTY THING BEHIND ME, I LIKE THEM CURVY!!!");
+              return;
+            }
             if(j.argModes.indexOf("none") > -1&&message.content.toLowerCase().match(reg("^",command, "$"))){
               var continueCommand = true;
               j.otherReqs.forEach(function(k){
