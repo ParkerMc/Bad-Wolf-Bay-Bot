@@ -44,7 +44,7 @@ function rollDie(match) {
   return output;
 }
 
-function roll(argString, message){
+function roll(bot, argString, message){
   var argArray = argString.split(" ");
   var msg = "";
   for (var i = 0; i < argArray.length; i++) {

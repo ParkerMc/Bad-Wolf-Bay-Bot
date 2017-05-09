@@ -1,7 +1,6 @@
 // TODO: Comment
 var file = require('./../utils/file.js');
 var utils = require('./../utils/utils.js');
-var settings = require('./../../settings.js');
 
 var firstConnect = true; // Used to make sure some things that need to be connected only get ran once
 var botChannelId = "303706109238050819" // Teting channel
@@ -41,96 +40,51 @@ if (RR["index"] === undefined){
   RR["index"] = 0;
 }
 
-// TODO: move to utils
-function atAboveRole(message, role) { // Get if user is at or about the role provied
-  var roles = []; // Stores all of the roles that are at above
-  var index = settings.roles.indexOf(role.toLowerCase()); // Index of the lowest role
-  for (var i = index; i < settings.roles.length; i++) {
-    roles.push(settings.roles[i]); // Add roles that are higher than the lowest allowed
-  }
-  return inRole(message, roles); // Check if in one of roles
-}
-// TODO: move to utils
-function inRole(message, inRoles){
-  var roles = []; // Store the roles objects
-  message.channel.guild.roles.forEach( // For each of roles in the server add it if the name is in array
-    function(i){if (inRoles.indexOf(i.name.toLowerCase()) > -1) roles.push(i);});
-  for (var i = 0; i < roles.length; i++) { // Loop  though roles and see if member is part any of them
-    if(roles[i].members.get(message.author.id) !== undefined) return true;
-  }
-  return false; // Else false
-}
-
 function save() {
   file.saveJson("RR.json", RR);
 }
-// TODO: move to utils
-function move(arr, old_index, new_index) {
-    if (new_index >= arr.length) {
-        var k = new_index - arr.length;
-        while ((k--) + 1) {
-            arr.push(undefined);
-        }
-    }
-    arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
-    return arr; // for testing purposes
-}
 
-function next() {
-  if (RR["index"] < RR.length){
-    botChannel.send(RR["userList"][RR["index"]]["user"].username + " is done passing to " + userList[RR["index"]+1]["user"].username + ".");
-    RR["index"]++;
-    RR["userList"][RR["index"]]["user"].send(ifThereMsg);
-    RR["currentUser"] = RR["userList"][RR["index"]];
-    RR["userList"][RR["index"]]["accepted"] = false;
-    RR["userList"][RR["index"]]["text"] = [];
-    save();
-    timeout(RR["userList"][RR["index"]]);
-  }else{
-    save();
-    botChannel.send("RR done sending to Riza.");
-    var userDM = botChannel.members.find(i => i.user.username.toLowerCase() == settings.sendTo.toLowerCase()).user;
-    for (var i = 0; i < RR.length; i++) {
-      userDM.send(RR[i]);
+function listUsers(channel, msg){
+  RR["userList"].forEach(function(i) { // Go through and add each username to message
+    if (RR["userList"].indexOf(i) == 0){ // If it is the first just add the username
+      msg += i.username;
+    }else if (RR["userList"].indexOf(i) == RR["userList"].length - 1){ // else if it is the last add ", and " then username
+      msg += ", and " + i.username;
+    }else{ // Else it is one in the middle so just add comma and username
+      msg += ", " + i.username;
     }
-    started = false;
+  });
+  if (RR["userList"].length == 0){ // If list is empty say that.
+    msg += "empty";
   }
+  channel.send(msg + "."); // Send message and add period
 }
 
-function timeout(user){
-  setTimeout(function(user) {
-    if(user["user"].username == RR["currentUser"]["user"].username&&RR["currentUser"]["accepted"] == false&&!RR["paused"]){
-      user.send("You took too long if this is the first you missed it you will be moved to the end.");
-      botChannel.send(user.username + "took too long passing on.")
-      if (!user["alreadyTimedout"]){
-        user["alreadyTimedout"] == true;
-        move(RR["userList"], 0, RR["userList"].length - 1);
-      }else{
-        RR["userList"].splice(0, 1);
-      }
-      listUsers(botChannel, "Updated user list: ");
-      next();
-    }
-  }, timeToResond*60000, user);
-}
-
-async function onReady(bot){
+function onReady(bot){
   if (firstConnect){ // Make sure this is the first connet
     botChannel = bot.channels.find(i => i.id === botChannelId); // Get the bot channel
-    for (var i = 0; i < RR["userList"].length; i++) { // Changed all the user ids that are saved into user objects
-      RR["userList"][i]["user"] = await bot.fetchUser(RR["userList"][i]["user"].id);
-    }
-    if (RR["currentUser"] !== null) {
-      RR["currentUser"] = await bot.fetchUser(RR["currentUser"].id);
-      timeout(RR["userList"][RR["userList"].indexOf(RR["currentUser"])]);
-    }
   }
 }
 
-function rrsettings(argString, message) {
+function onMessage(bot, message) {
+  if(RR["currentUser"] == message.author.id&&RR.userList[RR["index"]]["accepted"] == true){
+    RR.userList[RR["index"]]["text"].push(message.content);
+  }
+}
+
+function userInList(user) {
+  for (var i = 0; i < RR["userList"].length; i++) {
+    if (RR["userList"][i]["user"] == user.id) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function rrsettings(bot, argString, message) {
   if(argString == ""){
     if(RR["userSettings"][message.author.id] === undefined){
-      message.channel.send("You settings have not been set.");
+      message.channel.send("You settings have not been set. Set them with `?RRSettings <timezone> <writer name>`");
     }else {
       var msg = "```";
       msg += "\nWritername: " + RR["userSettings"][message.author.id]["name"];
@@ -147,39 +101,18 @@ function rrsettings(argString, message) {
   }
 }
 
-function listUsers(channel, msg){
-  RR["userList"].forEach(function(i) { // Go through and add each username to message
-    if (RR["userList"].indexOf(i) == 0){ // If it is the first just add the username
-      msg += i["user"].username;
-    }else if (RR["userList"].indexOf(i) == RR["userList"].length - 1){ // else if it is the last add ", and " then username
-      msg += ", and " + i["user"].username;
-    }else{ // Else it is one in the middle so just add comma and username
-      msg += ", " + i["user"].username;
-    }
-  });
-  if (RR["userList"].length == 0){ // If list is empty say that.
-    msg += "empty";
+function add(bot, argString, message){ // Add the user to list
+  if(RR["userSettings"][message.author.id] === undefined){
+    message.channel.send("You settings have not been set. Set them with `?RRSettings <timezone> <writer name>`");
+  }else {
+    RR["userList"].push({user: message.author.id, username: message.author.username,  restrictions: argString});
+    listUsers(botChannel, "Updated user list: ");
+    save();
+    message.channel.send("Added.");
   }
-  channel.send(msg + "."); // Send message and add period
 }
 
-function userInList(user) {
-  for (var i = 0; i < RR["userList"].length; i++) {
-    if (RR["userList"][i]["user"].id == user.id) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function add(argString, message){ // Add the user to list
-  RR["userList"].push({user: message.author, restrictions: argString});
-  listUsers(botChannel, "Updated user list: ");
-  save();
-  message.channel.send("Added.");
-}
-
-function addA(argString, message) {
+function addA(bot, argString, message) {
   var username = argString.split(" ")[0];
   var user = message.channel.members.find(i => i.user.username.toLowerCase() == username.toLowerCase());
   var i = 0;
@@ -192,24 +125,38 @@ function addA(argString, message) {
     username += " " + username.split(" ")[i];
     user = message.channel.members.find(i => i.user.username.toLowerCase() == username.toLowerCase());
   }
-  RR["userList"].push({user: user.user, restrictions: argString.substring(username.length+1)});
-  listUsers(botChannel, "Updated user list: ");
-  save();
-  message.channel.send("Added.");
+  if(RR["userSettings"][user.user.id] === undefined){
+    message.channel.send("This users settings have not been set. Set them with `?RRSettings <timezone> <writer name>`");
+  }else {
+    RR["userList"].push({user: user.user.id, username: user.user.username, restrictions: argString.substring(username.length+1)});
+    listUsers(botChannel, "Updated user list: ");
+    save();
+    message.channel.send("Added.");
+  }
 }
 
-function accept(argString, message) {
-
-}
-
-function list(argString, message) {
+function list(bot, argString, message) {
   listUsers(message.channel, "User list: ");
 }
 
-function remove(argString, message) {
+async function remove(bot, argString, message) {
+  if(RR["currentUser"] == message.author.id){
+    RR["userList"].splice(RR["index"], 1);
+    if(userList[RR["index"]]===undefined){
+      next(bot);
+    }
+    listUsers(botChannel, "Updated user list: ");
+    botChannel.send("Passing to " + RR.userList[RR["index"]].username + ".");
+    (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send(ifThereMsg);
+    RR["currentUser"] = RR["userList"][RR["index"]]["user"];
+    RR["userList"][RR["index"]]["accepted"] = false;
+    RR["userList"][RR["index"]]["text"] = [];
+    save();
+    timeout(bot, RR["userList"][RR["index"]]);
+  }
   if(argString == ""){
     RR["userList"].forEach(function(i){
-      if (i["user"].id == message.author.id){
+      if (i["user"] == message.author.id){
         RR["userList"].splice(RR["userList"].indexOf(i), 1);
       }
     });
@@ -218,7 +165,7 @@ function remove(argString, message) {
     save();
   }else {
     for (var i = 0; i < RR["userList"].length; i++) {
-      if (RR["userList"][i]["user"].username.toLowerCase() == argString.toLowerCase()){
+      if (RR["userList"][i].username.toLowerCase() == argString.toLowerCase()){
         RR["userList"].splice(i, 1);
         listUsers(botChannel, "Updated user list: ");
         message.channel.send("Removed.");
@@ -230,25 +177,101 @@ function remove(argString, message) {
   }
 }
 
-function start(argString, message) {
+function move(bot, argString, message) {
+  var username = argString.toLowerCase().split(" ");
+  username.splice(-1,1);
+  username = username.join(" ");
+  for (var i = 0; i < RR["userList"].length; i++) {
+    if (RR["userList"][i].username.toLowerCase() == username){
+      utils.move(RR["userList"], 0, parseInt(argString.split(" ")[argString.split(" ").length-1])-1);
+      listUsers(botChannel, "Updated user list: ");
+      message.channel.send("Moved.");
+      save();
+      return;
+    }
+  }
+  message.channel.send("User not found.");
+}
+
+async function timeout(bot, user){
+  setTimeout(async function(userId) {
+    if(userId == RR["currentUser"]&&[RR["index"]]["accepted"] == false&&!RR["paused"]){
+      (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send("You took too long if this is the first you missed it you will be moved to the end.");
+      botChannel.send(RR["userList"][RR["index"]]["username"] + "took too long passing on.");
+      if (!user["alreadyTimedout"]){
+        user["alreadyTimedout"] == true;
+        utils.move(RR["userList"], RR["index"], RR["userList"].length - 1);
+      }else{
+        RR["userList"].splice(RR["index"], 1);
+        if(userList[RR["index"]]===undefined){
+          next(bot);
+        }
+      }
+      listUsers(botChannel, "Updated user list: ");
+      botChannel.send("Passing to " + RR.userList[RR["index"]].username + ".");
+      (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send(ifThereMsg);
+      RR["currentUser"] = RR["userList"][RR["index"]]["user"];
+      RR["userList"][RR["index"]]["accepted"] = false;
+      RR["userList"][RR["index"]]["text"] = [];
+      save();
+      timeout(bot, RR["userList"][RR["index"]]);
+    }
+  }, timeToResond*60000, bot, user);
+}
+
+async function next(bot) {
+  if (RR["index"] < RR.length){
+    botChannel.send(RR["userList"][RR["index"]].username + " is done passing to " + userList[RR["index"]+1].username + ".");
+    RR["index"]++;
+    (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send(ifThereMsg);
+    RR["currentUser"] = RR["userList"][RR["index"]]["user"];b
+    RR["userList"][RR["index"]]["accepted"] = false;
+    RR["userList"][RR["index"]]["text"] = [];
+    save();
+    timeout(bot, RR["userList"][RR["index"]]);
+  }else{
+    botChannel.send("RR done sending to Riza.");
+    var userDM = await bot.fetchUser("268795277970767882");
+    var msg = "";
+    for (var i = 0; i < RR["index"]+1; i++) {
+      for (var j = 0; j < RR.userList[i]["text"].length; j++) {
+        if("\n"+RR.userList[i]["text"][j]+msg>2000){
+          userDM.send(msg);
+          msg = "";
+        }
+        msg += "\n" + RR.userList[i]["text"][j];
+      }
+    }
+    userDM.send(msg);
+    RR["note"] = "Please write 3 sentences in 15 minutes that build on things people have written before you.";
+    RR["userList"] = [];
+    RR["started"] = false;
+    RR["paused"] = false;
+    RR["currentUser"] = null;
+    RR["index"] = 0;
+    save();
+  }
+}
+
+async function start(bot, argString, message) {
   if(!RR["started"]){
     RR["started"] = true;
     if (RR["currentUser"] === null) {
-        botChannel.send(message.author.username+" has started the RR " + RR["userList"][0]["user"].username + " will start.");
-        RR["userList"][0]["user"].send(ifThereMsg);
-        RR["currentUser"] = RR["userList"][0];
+        botChannel.send(message.author.username+" has started the RR " + RR["userList"][0].username + " will start.");
+        (await bot.fetchUser(RR["userList"][0]["user"])).send(ifThereMsg);
+        RR["currentUser"] = RR["userList"][0]["user"];
         RR["userList"][0]["accepted"] = false;
         RR["userList"][0]["alreadyTimedout"] = false;
         RR["userList"][0]["text"] = [];
         RR["index"] = 0;
         save();
         message.channel.send("Started.");
-        timeout(RR["userList"][0]);
+        timeout(bot, RR["userList"][0]);
     }
   }
 }
 
-function pause(argString, message) {
+function pause(bot, argString, message) {
   if (RR["paused"]){
     message.channel.send("Unpaused. Will now timeout people.");
     RR["paused"] = false;
@@ -259,10 +282,49 @@ function pause(argString, message) {
  save();
 }
 
+function accept(bot, argString, message) {
+  var msg = "";
+  botChannel.send(message.author.username+" has accepted.");
+  RR.userList[RR["index"]]["accepted"] = true;
+  for (var i = 0; i < RR["index"]+1; i++) {
+    for (var j = 0; j < RR.userList[i]["text"].length; j++) {
+      if("\n"+RR.userList[i]["text"][j]+msg>2000){
+        message.author.send(msg);
+        msg = "";
+      }
+      msg += "\n" + RR.userList[i]["text"][j];
+    }
+  }
+  message.author.send(msg);
+  message.author.send(RR["note"]);
+  message.author.send(endMessage);
+}
+
+async function deny(bot, argString, message) {
+  botChannel.send(message.author.username+" has denied.");
+  message.channel.send("You have been moved to the end.");
+  utils.move(RR["userList"], RR["index"], RR["userList"].length - 1);
+  listUsers(botChannel, "Updated user list: ");
+  botChannel.send("Passing to " + RR.userList[RR["index"]].username + ".");
+  (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send(ifThereMsg);
+  RR["currentUser"] = RR["userList"][RR["index"]]["user"];
+  RR["userList"][RR["index"]]["accepted"] = false;
+  RR["userList"][RR["index"]]["text"] = [];
+  save();
+  timeout(bot, RR["userList"][RR["index"]]);
+}
+
+async function done(bot, argString, message) {
+  RR.userList[RR["index"]]["text"].push(argString);
+  message.channel.send("Added thank you.");
+  await next(bot);
+}
+
 module.exports = {
   name: "Round Robbin",
   description: "The Round Robin is where we get a list of names of people who want to join the robin. Depending on the amount of people we usually have each person write 3 sentences in 15 minutes then pass it on to the bot. Rizapheonyxx usually goes through it for grammar errors.",
   onReady: onReady,
+  onMessage: onMessage,
   commands:[
     {
       description: "Settings for the RR.",
@@ -324,7 +386,7 @@ module.exports = {
       rank: "@everyone",
       otherReqs: [function(argString, message) {
         if(argString != ""){
-          if(atAboveRole(message, "hydra heads")){
+          if(utils.atAboveRole(message, "hydra heads")){
             return true;
           }
           // TODO: Add perm error
@@ -340,6 +402,26 @@ module.exports = {
         }
       }],
       function: remove
+    },
+    {
+      description: "Moves someone that is in the list.",
+      command: "move",
+      argModes: ["after"],
+      args: ["username", "slot number"],
+      dm: false,
+      channel: true,
+      rank: "hydra heads",
+      otherReqs: [function(argString, message) {
+          if (isNaN(argString.split(" ")[argString.split(" ").length-1])){ // If arg is not int return error
+            message.channel.send("`" + argString.split(" ")[argString.split(" ").length-1] + "` is not a number.");
+            return false;
+          }else if(parseInt(argString.split(" ")[argString.split(" ").length-1]) > RR.userList.length){
+            message.channel.send("`" + argString.split(" ")[argString.split(" ").length-1] + "` is too big max is `"+RR.userList.length+"`.");
+            return false;
+          }
+          return true;
+        }],
+      function: move
     },
     {
       description: "Starts the RR.",
@@ -362,8 +444,7 @@ module.exports = {
       rank: "hydra heads",
       otherReqs: [],
       function: pause
-    }
-    /*
+    },
     {
       description: "Accept the RR.",
       command: "accept",
@@ -373,9 +454,35 @@ module.exports = {
       channel: false,
       rank: "@everyone",
       otherReqs: [function(argString, message) {
-        if(currentUser == message.author&&accepted == false) return true;
+        if(RR["currentUser"] == message.author.id&&RR.userList[RR["index"]]["accepted"] == false) return true;
         return false;}],
       function: accept
-    },*/
+    },
+    {
+      description: "Deny the RR.",
+      command: "deny",
+      argModes: ["none"],
+      args: [""],
+      dm: true,
+      channel: false,
+      rank: "@everyone",
+      otherReqs: [function(argString, message) {
+        if(RR["currentUser"] == message.author.id) return true;
+        return false;}],
+      function: deny
+    },
+    {
+      description: "Add your writing.",
+      command: "done",
+      argModes: ["none","after"],
+      args: ["writing"],
+      dm: true,
+      channel: false,
+      rank: "@everyone",
+      otherReqs: [function(argString, message) {
+        if(RR["currentUser"] == message.author.id&&RR.userList[RR["index"]]["accepted"]) return true;
+        return false;}],
+      function: done
+    }
   ]
 }

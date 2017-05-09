@@ -1,8 +1,8 @@
-function f(argString, message){
+function f(bot, argString, message){
  message.channel.send(message.author.username + " pays their respects.");
 }
 
-function fiteme(argString, message){
+function fiteme(bot, argString, message){
  message.channel.send(message.author.username + " challenges " + argString + " to a fite!");
 }
 

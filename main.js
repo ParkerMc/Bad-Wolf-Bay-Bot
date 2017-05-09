@@ -5,7 +5,7 @@ const settings = require('./settings.js');
 
 process.on('unhandledRejection', r => console.log(r)); // Helps with errors
 const bot = new Discord.Client(); // Set bot object
-var version = "V1.2.4" // Version
+var version = "V1.3" // Version
 var modules = []; // Array to hold all of the modules
 
 fs.readdirSync("./modules") // Get all folders in modules and loop though them
@@ -143,7 +143,7 @@ bot.on('message', message => {
                 }
               });
               if(continueCommand){
-                j.function("", message);
+                j.function(bot, "", message);
               }
             }else if(j.argModes.indexOf("after") > -1&&message.content.toLowerCase().match(reg("^",command, "\\s"))){
               var args = message.content.substring(command.length+1).split(" ");
@@ -156,7 +156,7 @@ bot.on('message', message => {
                   }
                 });
                 if(continueCommand){
-                  j.function(args, message);
+                  j.function(bot, args, message);
                 }
               }else {
                 var msg = "Not enough arguments command format is `?" + j.command;
@@ -165,7 +165,7 @@ bot.on('message', message => {
                 message.channel.send(msg);
               }
             }else if(j.argModes.indexOf("before") > -1){
-              var args = message.content.substring(0, message.content - (command.length+1)).split(" ");
+              var args = message.content.substring(0, -(command.length+1)).split(" ");
               if (args.length >= j.args.length){
                 args = args.join(" ");
                 var continueCommand = true;
@@ -175,7 +175,7 @@ bot.on('message', message => {
                   }
                 });
                 if(continueCommand){
-                  j.function(args, message);
+                  j.function(bot, args, message);
                 }
               }else {
                 var msg = "Not enough arguments command format is `";
@@ -192,7 +192,7 @@ bot.on('message', message => {
   }else{ //Else it is not a command
     modules.forEach(function(i) { // Loop thought modules
       if(i["onMessage"] !== undefined){ // If onMessage if defined run it
-        i.onMessage(bot);
+        i.onMessage(bot, message);
       }
     });
   }

@@ -4,7 +4,7 @@ var utils = require('./../utils/utils.js');
 var filename = "quotes";
 var quotesL = file.loadArray(filename); // Load the quotes
 
-function addquote(argString, message){
+function addquote(bot, argString, message){
   // Adds a quote.
   quotesL.push(argString); // Add to array
   message.channel.send("Quote #" + (quotesL.indexOf(argString) + 1) + " added.") // Find index and return it
@@ -19,7 +19,7 @@ function addquote(argString, message){
   }
 }
 
-function quote(argString, message){
+function quote(bot, argString, message){
   // Return a quote
   if(argString == ""){ // If there is no argument send a random quote
     message.channel.send(quotesL[utils.randomInt(0, quotesL.length)]);
@@ -28,7 +28,7 @@ function quote(argString, message){
   }
 }
 
-function quotes(argString, message){
+function quotes(bot, argString, message){
   msg = "";
   for (var i = 0; i < quotesL.length; i++) { // Loop through array and send all the quotes with their index
     if ((msg + "\n" + (i+1) + ": " + quotesL[i]).length >= 2000){
