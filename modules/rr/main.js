@@ -3,8 +3,8 @@ var file = require('./../utils/file.js');
 var utils = require('./../utils/utils.js');
 
 var firstConnect = true; // Used to make sure some things that need to be connected only get ran once
-var botChannelId = "303706109238050819" // Teting channel
-//var botChannelId = "299032114677022722"; // Channel for the Bot to put updates in
+//var botChannelId = "303706109238050819" // Teting channel
+var botChannelId = "299032114677022722"; // Channel for the Bot to put updates in
 var botChannel = null;
 var RR = file.loadJson("RR.json"); // load json file
 // Set a few messages
@@ -142,7 +142,7 @@ function list(bot, argString, message) {
 async function remove(bot, argString, message) {
   if(RR["currentUser"] == message.author.id){
     RR["userList"].splice(RR["index"], 1);
-    if(userList[RR["index"]]===undefined){
+    if(RR.userList[RR["index"]]===undefined){
       next(bot);
     }
     listUsers(botChannel, "Updated user list: ");
@@ -152,7 +152,7 @@ async function remove(bot, argString, message) {
     RR["userList"][RR["index"]]["accepted"] = false;
     RR["userList"][RR["index"]]["text"] = [];
     save();
-    timeout(bot, RR["userList"][RR["index"]]);
+    timeout(bot, RR["userList"][RR["index"]]["user"]);
   }
   if(argString == ""){
     RR["userList"].forEach(function(i){
@@ -194,16 +194,15 @@ function move(bot, argString, message) {
 }
 
 async function timeout(bot, user){
-  setTimeout(async function(userId) {
-    if(userId == RR["currentUser"]&&[RR["index"]]["accepted"] == false&&!RR["paused"]){
+  setTimeout(async function(bot, userId) {
+    if(userId == RR["currentUser"]&&!RR["userList"][RR["index"]]["accepted"]&&!RR["paused"]){
       (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send("You took too long if this is the first you missed it you will be moved to the end.");
-      botChannel.send(RR["userList"][RR["index"]]["username"] + "took too long passing on.");
-      if (!user["alreadyTimedout"]){
-        user["alreadyTimedout"] == true;
+      if (!RR["userList"][RR["index"]]["alreadyTimedout"]){
+        RR["userList"][RR["index"]]["alreadyTimedout"] = true;
         utils.move(RR["userList"], RR["index"], RR["userList"].length - 1);
       }else{
         RR["userList"].splice(RR["index"], 1);
-        if(userList[RR["index"]]===undefined){
+        if(RR.userList[RR["index"]]===undefined){
           next(bot);
         }
       }
@@ -214,26 +213,26 @@ async function timeout(bot, user){
       RR["userList"][RR["index"]]["accepted"] = false;
       RR["userList"][RR["index"]]["text"] = [];
       save();
-      timeout(bot, RR["userList"][RR["index"]]);
+      timeout(bot, RR["userList"][RR["index"]]["user"]);
     }
   }, timeToResond*60000, bot, user);
 }
 
 async function next(bot) {
-  if (RR["index"] < RR.length){
-    botChannel.send(RR["userList"][RR["index"]].username + " is done passing to " + userList[RR["index"]+1].username + ".");
+  if (RR["index"] < RR["userList"].length-1){
+    botChannel.send(RR["userList"][RR["index"]].username + " is done passing to " + RR.userList[RR["index"]+1].username + ".");
     RR["index"]++;
     (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send(ifThereMsg);
-    RR["currentUser"] = RR["userList"][RR["index"]]["user"];b
+    RR["currentUser"] = RR["userList"][RR["index"]]["user"];
     RR["userList"][RR["index"]]["accepted"] = false;
     RR["userList"][RR["index"]]["text"] = [];
     save();
-    timeout(bot, RR["userList"][RR["index"]]);
+    timeout(bot, RR["userList"][RR["index"]]["user"]);
   }else{
     botChannel.send("RR done sending to Riza.");
-    var userDM = await bot.fetchUser("268795277970767882");
+    var userDM = await bot.fetchUser("270052890935033866");
     var msg = "";
-    for (var i = 0; i < RR["index"]+1; i++) {
+    for (var i = 0; i < RR.userList.length; i++) {
       for (var j = 0; j < RR.userList[i]["text"].length; j++) {
         if("\n"+RR.userList[i]["text"][j]+msg>2000){
           userDM.send(msg);
@@ -241,6 +240,11 @@ async function next(bot) {
         }
         msg += "\n" + RR.userList[i]["text"][j];
       }
+      if(" -" + RR["userSettings"][RR.userList[i]["user"]]["name"]+msg>2000){
+        message.author.send(msg);
+        msg = "";
+      }
+      msg += " -" + RR["userSettings"][RR.userList[i]["user"]]["name"];
     }
     userDM.send(msg);
     RR["note"] = "Please write 3 sentences in 15 minutes that build on things people have written before you.";
@@ -255,20 +259,18 @@ async function next(bot) {
 
 async function start(bot, argString, message) {
   if(!RR["started"]){
-    RR["started"] = true;
-    if (RR["currentUser"] === null) {
-        botChannel.send(message.author.username+" has started the RR " + RR["userList"][0].username + " will start.");
-        (await bot.fetchUser(RR["userList"][0]["user"])).send(ifThereMsg);
-        RR["currentUser"] = RR["userList"][0]["user"];
-        RR["userList"][0]["accepted"] = false;
-        RR["userList"][0]["alreadyTimedout"] = false;
-        RR["userList"][0]["text"] = [];
-        RR["index"] = 0;
-        save();
-        message.channel.send("Started.");
-        timeout(bot, RR["userList"][0]);
+      botChannel.send(message.author.username+" has started the RR " + RR["userList"][0].username + " will start.");
+      (await bot.fetchUser(RR["userList"][0]["user"])).send(ifThereMsg);
+      RR["currentUser"] = RR["userList"][0]["user"];
+      RR["userList"][0]["accepted"] = false;
+      RR["userList"][0]["alreadyTimedout"] = false;
+      RR["userList"][0]["text"] = [];
+      RR["index"] = 0;
+      RR["started"] = true;
+      save();
+      message.channel.send("Started.");
+      timeout(bot, RR["userList"][0]["user"]);
     }
-  }
 }
 
 function pause(bot, argString, message) {
@@ -286,7 +288,7 @@ function accept(bot, argString, message) {
   var msg = "";
   botChannel.send(message.author.username+" has accepted.");
   RR.userList[RR["index"]]["accepted"] = true;
-  for (var i = 0; i < RR["index"]+1; i++) {
+  for (var i = 0; i < RR["index"]; i++) {
     for (var j = 0; j < RR.userList[i]["text"].length; j++) {
       if("\n"+RR.userList[i]["text"][j]+msg>2000){
         message.author.send(msg);
@@ -294,10 +296,16 @@ function accept(bot, argString, message) {
       }
       msg += "\n" + RR.userList[i]["text"][j];
     }
+    if(" -" + RR["userSettings"][RR.userList[i]["user"]]["name"]+msg>2000){
+      message.author.send(msg);
+      msg = "";
+    }
+    msg += " -" + RR["userSettings"][RR.userList[i]["user"]]["name"];
   }
   message.author.send(msg);
   message.author.send(RR["note"]);
   message.author.send(endMessage);
+  save();
 }
 
 async function deny(bot, argString, message) {
@@ -311,7 +319,7 @@ async function deny(bot, argString, message) {
   RR["userList"][RR["index"]]["accepted"] = false;
   RR["userList"][RR["index"]]["text"] = [];
   save();
-  timeout(bot, RR["userList"][RR["index"]]);
+  timeout(bot, RR["userList"][RR["index"]]["user"]);
 }
 
 async function done(bot, argString, message) {
@@ -394,7 +402,7 @@ module.exports = {
         }else {
           var found = false;
           RR["userList"].forEach(function(i){
-            if (i["user"].id == message.author.id){
+            if (i["user"] == message.author.id){
               found = true;
             }
           });
