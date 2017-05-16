@@ -81,6 +81,16 @@ function userInList(user) {
   return false;
 }
 
+function note(bot, argString, message) {
+  if(argString == ""){
+      message.channel.send(RR["note"]);
+  }else {
+    RR["note"] = argString;
+    save();
+    message.channel.send("Note updated.");
+  }
+}
+
 function rrsettings(bot, argString, message) {
   if(argString == ""){
     if(RR["userSettings"][message.author.id] === undefined){
@@ -192,7 +202,18 @@ function move(bot, argString, message) {
   }
   message.channel.send("User not found.");
 }
-
+async function skip(bot, argString, message) {
+  (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send("You were skiped and moved to the end.");
+  utils.move(RR["userList"], RR["index"], RR["userList"].length - 1);
+  listUsers(botChannel, "Updated user list: ");
+  botChannel.send("Passing to " + RR.userList[RR["index"]].username + ".");
+  (await bot.fetchUser(RR["userList"][RR["index"]]["user"])).send(ifThereMsg);
+  RR["currentUser"] = RR["userList"][RR["index"]]["user"];
+  RR["userList"][RR["index"]]["accepted"] = false;
+  RR["userList"][RR["index"]]["text"] = [];
+  save();
+  timeout(bot, RR["userList"][RR["index"]]["user"]);
+}
 async function timeout(bot, user){
   setTimeout(async function(bot, userId) {
     if(userId == RR["currentUser"]&&!RR["userList"][RR["index"]]["accepted"]&&!RR["paused"]){
@@ -346,6 +367,17 @@ module.exports = {
       function: rrsettings
     },
     {
+      description: "The note shown to everyone.",
+      command: "note",
+      argModes: ["none", "after"],
+      args: ["note"],
+      dm: false,
+      channel: true,
+      rank: "hydra heads",
+      otherReqs: [],
+      function: note
+    },
+    {
       description: "Adds you to the RR list",
       command: "add",
       argModes: ["after", "none"],
@@ -441,6 +473,17 @@ module.exports = {
       rank: "hydra heads",
       otherReqs: [],
       function: start
+    },
+    {
+      description: "Skip and move the current user to the end.",
+      command: "skip",
+      argModes: ["none"],
+      args: [],
+      dm: false,
+      channel: true,
+      rank: "hydra heads",
+      otherReqs: [],
+      function: skip
     },
     {
       description: "Stops timeingout people.",
