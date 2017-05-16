@@ -11,10 +11,10 @@ var RR = file.loadJson("RR.json"); // load json file
 var timeToResond = 5;
 var timeToResondText = "5 minutes";
 var ifThereMsg = "It is your turn for the RR please run \"?accept\" to accept, \"?deny\" to be moved to the end of the list, or \"?remove\" to be skiped and removed from the list. You will be skiped after " + timeToResondText + ".";
-var endMessage = "Send me your when you are done used \"?done\" to add your writeing or you can use \"?deny\" or \"?remove\"."
+var endMessage = "Send me your when you are done used \"?done\" to add your writing or you can use \"?deny\" or \"?remove\"."
 // Setup Json
 if (RR["note"] === undefined || RR["note"] == ""){
-  RR["note"] = "Please write 3 sentences in 15 minutes that build on things people have written before you.";
+  RR["note"] = "Please write 3 sentences in 15 minutes that build on things people have written before you. If you need longer than 15 minutes that is fine.";
 }
 if (RR["userList"] === undefined){
   RR["userList"] = [];
@@ -176,11 +176,16 @@ async function remove(bot, argString, message) {
   }else {
     for (var i = 0; i < RR["userList"].length; i++) {
       if (RR["userList"][i].username.toLowerCase() == argString.toLowerCase()){
-        RR["userList"].splice(i, 1);
-        listUsers(botChannel, "Updated user list: ");
-        message.channel.send("Removed.");
-        save();
-        return;
+        if(RR["currentUser"] != RR["userList"][i].user){
+          RR["userList"].splice(i, 1);
+          listUsers(botChannel, "Updated user list: ");
+          message.channel.send("Removed.");
+          save();
+          return;
+        }else {
+          message.channel.send("User is writing or has already written. To remove them if they are writing first do ?skip");
+          return;
+        }
       }
     }
     message.channel.send("User not found.");
@@ -193,11 +198,16 @@ function move(bot, argString, message) {
   username = username.join(" ");
   for (var i = 0; i < RR["userList"].length; i++) {
     if (RR["userList"][i].username.toLowerCase() == username){
-      utils.move(RR["userList"], i, parseInt(argString.split(" ")[argString.split(" ").length-1])-1);
-      listUsers(botChannel, "Updated user list: ");
-      message.channel.send("Moved.");
-      save();
-      return;
+      if(RR["currentUser"] != RR["userList"][i].user){
+        utils.move(RR["userList"], i, parseInt(argString.split(" ")[argString.split(" ").length-1])-1);
+        listUsers(botChannel, "Updated user list: ");
+        message.channel.send("Moved.");
+        save();
+        return;
+      }else {
+        message.channel.send("User is writing or has already written. To move them if they are writing first do ?skip");
+        return;
+      }
     }
   }
   message.channel.send("User not found.");
