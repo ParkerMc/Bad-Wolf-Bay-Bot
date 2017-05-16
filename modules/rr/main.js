@@ -265,13 +265,13 @@ async function next(bot) {
     var msg = "";
     for (var i = 0; i < RR.userList.length; i++) {
       for (var j = 0; j < RR.userList[i]["text"].length; j++) {
-        if("\n"+RR.userList[i]["text"][j]+msg>2000){
+        if(("\n"+RR.userList[i]["text"][j]+msg).length>2000){
           userDM.send(msg);
           msg = "";
         }
         msg += "\n" + RR.userList[i]["text"][j];
       }
-      if(" -" + RR["userSettings"][RR.userList[i]["user"]]["name"]+msg>2000){
+      if((" -" + RR["userSettings"][RR.userList[i]["user"]]["name"]+msg).length>2000){
         message.author.send(msg);
         msg = "";
       }
@@ -321,13 +321,13 @@ function accept(bot, argString, message) {
   RR.userList[RR["index"]]["accepted"] = true;
   for (var i = 0; i < RR["index"]; i++) {
     for (var j = 0; j < RR.userList[i]["text"].length; j++) {
-      if("\n"+RR.userList[i]["text"][j]+msg>2000){
+      if(("\n"+RR.userList[i]["text"][j]+msg).length>2000){
         message.author.send(msg);
         msg = "";
       }
       msg += "\n" + RR.userList[i]["text"][j];
     }
-    if(" -" + RR["userSettings"][RR.userList[i]["user"]]["name"]+msg>2000){
+    if((" -" + RR["userSettings"][RR.userList[i]["user"]]["name"]+msg).length>2000){
       message.author.send(msg);
       msg = "";
     }
