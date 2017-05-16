@@ -193,7 +193,8 @@ function move(bot, argString, message) {
   username = username.join(" ");
   for (var i = 0; i < RR["userList"].length; i++) {
     if (RR["userList"][i].username.toLowerCase() == username){
-      utils.move(RR["userList"], 0, parseInt(argString.split(" ")[argString.split(" ").length-1])-1);
+      utils.move(RR["userList"], i, parseInt(argString.split(" 
+")[argString.split(" ").length-1])-1);
       listUsers(botChannel, "Updated user list: ");
       message.channel.send("Moved.");
       save();
