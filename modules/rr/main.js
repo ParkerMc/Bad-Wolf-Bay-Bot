@@ -67,7 +67,9 @@ function onReady(bot){
 }
 
 function onMessage(bot, message) {
-  if(RR["currentUser"] == message.author.id&&RR.userList[RR["index"]]["accepted"] == true){
+  if(RR["currentUser"] == 
+message.author.id&&RR.userList[RR["index"]]["accepted"] == 
+true&&message.channel.type == "dm"){
     RR.userList[RR["index"]]["text"].push(message.content);
   }
 }
