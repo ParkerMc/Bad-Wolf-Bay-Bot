@@ -5,7 +5,7 @@ const settings = require('./settings.js');
 
 process.on('unhandledRejection', r => console.log(r)); // Helps with errors
 const bot = new Discord.Client(); // Set bot object
-var version = "V1.3" // Version
+var version = "V1.4" // Version
 var modules = []; // Array to hold all of the modules
 
 fs.readdirSync("./modules") // Get all folders in modules and loop though them
@@ -18,7 +18,7 @@ fs.readdirSync("./modules") // Get all folders in modules and loop though them
       });
     })
   });
-
+bot.modules = modules;
   function regexEscape(str) {
       return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
   }
@@ -118,12 +118,14 @@ bot.on('message', message => {
       message.channel.send("No information found on that.");
     }
   }else if (message.content.toLowerCase().match(/\s\?/)||message.content.toLowerCase().match(/^\?/)||message.content.toLowerCase().match(/\s\!/)||message.content.toLowerCase().match(/^\!/)){ // If it is a command or ! not ?
+    var funcommand = false;
     if(message.content.toLowerCase().match(/\?(.)*\b/g)){// If they used ? use that regex else use the ! regex
       // Get the command with regex and remove extra space (if it is there)
       var command = message.content.toLowerCase().match(/\?(.)*\b/g)[0].split(" ")[0];
     }else{
       // Get the command with regex and remove extra space (if it is there)
       var command = message.content.toLowerCase().match(/\!(.)*\b/g)[0].split(" ")[0];
+      funcommand = true;
     }
     modules.forEach(function(i) { // Loop though each of the modules and commands
       i.commands.forEach(function(j) {
@@ -131,7 +133,7 @@ bot.on('message', message => {
           // TODO: Comment
           // TODO: Add perm error
           if(((message.channel.type == "dm"&&j.dm)||(message.channel.type == "text"&&j.channel&&atAboveRole(message, j.rank)))){
-            if(message.content.toLowerCase().match(/\!(.)*\b/g)){ // If they used a ! send a fun little message
+            if(funcommand){ // If they used a ! send a fun little message
               message.channel.send("DON'T PUT THAT POINTY THING BEHIND ME, I LIKE THEM CURVY!!!");
               return;
             }
