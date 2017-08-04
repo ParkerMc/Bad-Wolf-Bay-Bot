@@ -2,7 +2,7 @@ var film = require("./film.js").film;
 
 var LINES_PER_FRAME = 14;
 var DELAY_NORMAL = 67;
-
+var DELAY_NORMAL = 603;
 var g_frameStep = 1; //advance one frame per tick
 var g_updateDelay = DELAY_NORMAL;
 var g_timerHandle = null;
@@ -27,7 +27,7 @@ async function displayFrame(frameNumber, message)
     	buffer += lineText+"\n";
 
     }
-    console.log( await message.edit("```\n" + buffer + "```"));
+    await message.edit("```\n" + buffer + "```");
 }
 
 function updateDisplay(message)
@@ -45,7 +45,7 @@ function updateDisplay(message)
     	//read the first line of the current frame as it is a number containing how many times this frame should be displayed
     	var nextFrameDelay = film[ g_currentFrame * LINES_PER_FRAME ] * g_updateDelay;
 
-    	var nextFrame = g_currentFrame + g_frameStep;
+    	var nextFrame = g_currentFrame + (g_frameStep);
 
     	if(validateFrame(nextFrame) == true)
 			g_currentFrame = nextFrame;
@@ -57,7 +57,7 @@ function updateDisplay(message)
 async function Play(bot, argString, message)
 {
   if(message.channel.name == "bottalk"){
-      g_frameStep = 1;
+      g_frameStep = 9;
       g_updateDelay = DELAY_NORMAL;
       messageS = await message.channel.send("```starting```");
   	updateDisplay(messageS);
