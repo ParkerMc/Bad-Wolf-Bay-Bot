@@ -3,6 +3,7 @@ var film = require("./film.js").film;
 var LINES_PER_FRAME = 14;
 var DELAY_NORMAL = 67;
 var DELAY_NORMAL = 603;
+var DELAY_NORMAL = 1;
 var g_frameStep = 1; //advance one frame per tick
 var g_updateDelay = DELAY_NORMAL;
 var g_timerHandle = null;
@@ -27,12 +28,13 @@ async function displayFrame(frameNumber, message)
     	buffer += lineText+"\n";
 
     }
-    await message.edit("```\n" + buffer + "```");
+      await message.edit("```\n" + buffer + "```");
 }
 
 function updateDisplay(message)
 {
-  if(g_currentFrame==3410){
+  if(g_currentFrame==3402){
+    message.edit('```\n\n\n\n                         To be continued.\n\n                   Simon Jansen  (C) 1997 - 2015\n\n                      Bot by: ParkerMc \n\n\n\n\n\n```')
     return;
   }
 	if(g_timerHandle)
