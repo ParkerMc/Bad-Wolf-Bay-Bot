@@ -3,11 +3,12 @@ var film = require("./film.js").film;
 var LINES_PER_FRAME = 14;
 var DELAY_NORMAL = 67;
 var DELAY_NORMAL = 603;
-var DELAY_NORMAL = 1;
+//var DELAY_NORMAL = 1;
 var g_frameStep = 1; //advance one frame per tick
 var g_updateDelay = DELAY_NORMAL;
 var g_timerHandle = null;
 var g_currentFrame = 0;
+var started = false;
 
 function validateFrame(frameNumber)
 {
@@ -35,6 +36,7 @@ function updateDisplay(message)
 {
   if(g_currentFrame==3402){
     message.edit('```\n\n\n\n                         To be continued.\n\n                   Simon Jansen  (C) 1997 - 2015\n\n                      Bot by: ParkerMc \n\n\n\n\n\n```')
+    started = false;
     return;
   }
 	if(g_timerHandle)
@@ -59,10 +61,15 @@ function updateDisplay(message)
 async function Play(bot, argString, message)
 {
   if(message.channel.name == "bottalk"){
+    if(!started){
       g_frameStep = 9;
       g_updateDelay = DELAY_NORMAL;
+      started = true;
       messageS = await message.channel.send("```starting```");
-  	updateDisplay(messageS);
+  	   updateDisplay(messageS);
+     }else{
+       message.channel.send("Are you already watching starwars?");
+     }
   }else{
     message.channel.send("Wrong channel.");
   }
