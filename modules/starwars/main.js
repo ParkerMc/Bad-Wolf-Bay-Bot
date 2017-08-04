@@ -56,7 +56,7 @@ function updateDisplay(message)
 
 async function Play(bot, argString, message)
 {
-  if(message.channel.name == "botchannel"){
+  if(message.channel.name == "bottalk"){
       g_frameStep = 1;
       g_updateDelay = DELAY_NORMAL;
       messageS = await message.channel.send("```starting```");
