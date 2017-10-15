@@ -374,7 +374,7 @@ module.exports = {
       args: ["timezone", "writer name"],
       dm: true,
       channel: true,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [],
       function: rrsettings
     },
@@ -396,7 +396,7 @@ module.exports = {
       args: ["time restrictions"],
       dm: false,
       channel: true,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [function(argString, message) {
         if(userInList(message.author)){ // Make sure user is not already in the list
           message.channel.send("You are already in the list.");
@@ -435,7 +435,7 @@ module.exports = {
       args: ["username"],
       dm: true,
       channel: true,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [function(argString, message) {
         if(argString != ""){
           if(utils.atAboveRole(message, "hydra heads")){
@@ -515,7 +515,7 @@ module.exports = {
       args: [""],
       dm: true,
       channel: false,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [function(argString, message) {
         if(RR["currentUser"] == message.author.id&&RR.userList[RR["index"]]["accepted"] == false) return true;
         return false;}],
@@ -528,7 +528,7 @@ module.exports = {
       args: [""],
       dm: true,
       channel: false,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [function(argString, message) {
         if(RR["currentUser"] == message.author.id) return true;
         return false;}],
@@ -541,7 +541,7 @@ module.exports = {
       args: ["writing"],
       dm: true,
       channel: false,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [function(argString, message) {
         if(RR["currentUser"] == message.author.id&&RR.userList[RR["index"]]["accepted"]) return true;
         return false;}],

@@ -9,8 +9,8 @@ function addquote(bot, argString, message){
   quotesL.push(argString); // Add to array
   message.channel.send("Quote #" + (quotesL.indexOf(argString) + 1) + " added.") // Find index and return it
   file.saveArray(filename, quotesL); // Save array to file
-  if(quotesL.indexOf(argString) + 1==200){
-    message.channel.send("We have hit 200! :tada: :tada: :tada:");
+  if(quotesL.indexOf(argString) + 1==300){
+    message.channel.send("We have hit 300! :tada: :tada: :tada:");
   }
   if(quotesL.indexOf(argString) + 2==404){
    quotesL.push("404 quote not found."); // Add to array
@@ -63,7 +63,7 @@ module.exports = {
       args: ["quote number"],
       dm: true,
       channel: true,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [function(argString, message) {
         if(argString != ""){
           if (isNaN(argString)){ // If arg is not int return error
@@ -86,7 +86,7 @@ module.exports = {
       args: [],
       dm: true,
       channel: true,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [],
       function: quotes
     }

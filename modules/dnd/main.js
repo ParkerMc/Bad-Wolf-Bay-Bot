@@ -75,7 +75,7 @@ module.exports = {
       args: ["dice"],
       dm: true,
       channel: true,
-      rank: "@everyone",
+      rank: "imps",
       otherReqs: [],
       function: roll
     }

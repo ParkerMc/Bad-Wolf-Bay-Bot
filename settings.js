@@ -1,4 +1,4 @@
 module.exports = {
-  roles: ["@everyone", "imps", "spawn", "hydra heads", "kraken"],
+  roles: ["imps", "spawn", "sirens", "hydra heads", "leviathan", "kraken"],
   description: "An bot for RR use."
 };

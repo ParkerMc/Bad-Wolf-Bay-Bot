@@ -21,7 +21,7 @@ function addCommand(bot, argString, message) {
     args: [],
     dm: true,
     channel: true,
-    rank: "@everyone",
+    rank: "imps",
     otherReqs: []
   };
   var json = {};
@@ -79,6 +79,7 @@ function addCommand(bot, argString, message) {
 function parseCommand(bot, argString, message) {
   var command = commands[message.content.toLowerCase().match(/\?(.)*\b/g)[0].split(" ")[0].substring(1)];
   message.channel.send(command.output.replaceAll("{{username}}",message.author.username).replaceAll("{{arg}}",argString));
+  message.delete();
 }
 
 module.exports = {

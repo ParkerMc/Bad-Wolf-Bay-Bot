@@ -6,7 +6,11 @@ function atAboveRole(message, role) { // Get if user is at or about the role pro
   for (var i = index; i < settings.roles.length; i++) {
     roles.push(settings.roles[i]); // Add roles that are higher than the lowest allowed
   }
-  return inRole(message, roles); // Check if in one of roles
+  if(inRole(message, ["slime", "mosquitos"])){
+    return false;
+  }else{
+    return inRole(message, roles); // Check if in one of roles
+  }
 }
 
 function inRole(message, inRoles){
