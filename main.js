@@ -70,7 +70,7 @@ bot.on('ready', function(){
 });
 
 bot.on('message', message => {
-  if(message.author.id == bot.user.id){ // Don't let the bot reply to its self
+  if(message.author.id == bot.user.id||message.guild.id!=settings.serverId){ // Don't let the bot reply to its self
     return;
   }
   if (message.content.toLowerCase().match(/^\?help$/)){ // If message is ?help
