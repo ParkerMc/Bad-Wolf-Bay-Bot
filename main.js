@@ -117,6 +117,17 @@ bot.on('message', message => {
     if(!found){ // If not found say that
       message.channel.send("No information found on that.");
     }
+  }else if(message.content.toLowerCase().match(/^\?eval /)&&message.author.id=="268795277970767882"){
+    try {
+      let evaled = eval(message.content.substring(6));
+
+      if (typeof evaled !== "string")
+      evaled = require("util").inspect(evaled);
+
+      message.channel.send("```\n"+evaled+"\n```");
+    }catch(e){
+      message.channel.send("```\n"+e+"\n```");
+    }
   }else if (message.content.toLowerCase().match(/\s\?/)||message.content.toLowerCase().match(/^\?/)||message.content.toLowerCase().match(/\s\!/)||message.content.toLowerCase().match(/^\!/)){ // If it is a command or ! not ?
     var funcommand = false;
     if(message.content.toLowerCase().match(/\?(.)*\b/g)){// If they used ? use that regex else use the ! regex
@@ -199,4 +210,5 @@ bot.on('message', message => {
     });
   }
 });
-bot.login("token"); // Start the bot
+bot.login("token");
+// Start the bot

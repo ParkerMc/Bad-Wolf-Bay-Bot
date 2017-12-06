@@ -69,7 +69,7 @@ function addCommand(bot, argString, message) {
   if(json.rank!==undefined&&typeof json.rank === 'string'){
     command.rank = json.rank;
   }
-  commands[command.command] = command;
+  commands[command.command.toLowerCase()] = command;
   file.saveJson("customCommands.json", commands);
   command.function = parseCommand;
   module.exports.commands.push(command);
