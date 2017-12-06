@@ -38,6 +38,11 @@ function atAboveRole(message, role) { // Get if user is at or about the role pro
   for (var i = index; i < settings.roles.length; i++) {
     roles.push(settings.roles[i]); // Add roles that are higher than the lowest allowed
   }
+  if(inRole(message, ["slime", "mosquitos"])){
+    return false;
+  }else{
+    return inRole(message, roles); // Check if in one of roles
+  }
   return inRole(message, roles); // Check if in one of roles
 }
 // TODO: move to utils
@@ -52,6 +57,9 @@ function inRole(message, inRoles){
 }
 
 bot.on('ready', function(){
+	var botChannelId = "364617053619093505"; // Channel for the Bot to put updates in
+	botChannel = bot.channels.find(i => i.id === botChannelId);
+//	botChannel.send("But this is my Realm!");
   bot.user.setGame(version + " By: @ParkerMc"); // Set game #sellOut
   modules.forEach(function(i) { // Loop thought modules
     if(i["onReady"] !== undefined){ // If onReady if defined run it
@@ -62,7 +70,7 @@ bot.on('ready', function(){
 });
 
 bot.on('message', message => {
-  if(message.author.id == bot.user.id){ // Don't let the bot reply to its self
+  if(message.author.id == bot.user.id||message.guild.id!=settings.serverId){ // Don't let the bot reply to its self
     return;
   }
   if (message.content.toLowerCase().match(/^\?help$/)){ // If message is ?help
@@ -128,7 +136,7 @@ bot.on('message', message => {
     }catch(e){
       message.channel.send("```\n"+e+"\n```");
     }
-  }else if (message.content.toLowerCase().match(/\s\?/)||message.content.toLowerCase().match(/^\?/)||message.content.toLowerCase().match(/\s\!/)||message.content.toLowerCase().match(/^\!/)){ // If it is a command or ! not ?
+  }else if (message.content.toLowerCase().match(/^\?./)||message.content.toLowerCase().match(/^\!./)){ // If it is a command or ! not ?
     var funcommand = false;
     if(message.content.toLowerCase().match(/\?(.)*\b/g)){// If they used ? use that regex else use the ! regex
       // Get the command with regex and remove extra space (if it is there)
@@ -210,5 +218,5 @@ bot.on('message', message => {
     });
   }
 });
-bot.login("token");
+bot.login("token"); // Start the bot
 // Start the bot
